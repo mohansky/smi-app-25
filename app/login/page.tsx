@@ -1,4 +1,4 @@
-"use client";
+// "use client";
 import { LoginForm } from "@/components/forms/login-form";
 import { Container } from "@/components/custom-ui/container";
 import {
