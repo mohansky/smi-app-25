@@ -37,7 +37,6 @@ export async function addStudent(
           ).flatMap(([field, errors]) =>
             errors.map((error) => `${field}: ${error}`)
           ),
-
           issues: Object.entries(
             validationResult.error.flatten().fieldErrors
           ).flatMap(([field, errors]) =>
@@ -74,7 +73,6 @@ export async function addStudent(
       instrument: data.instrument,
       grade: data.grade,
       batch: data.batch,
-      // Store dates as YYYY-MM-DD strings for SQLite
       dateOfBirth: data.dateOfBirth
         ? new Date(data.dateOfBirth).toISOString().split("T")[0]
         : null,
@@ -83,6 +81,11 @@ export async function addStudent(
     };
 
     await db.insert(students).values(insertData);
+
+    // FIX 1: Revalidate AFTER successful operation
+    revalidatePath("/dashboard/admin/students");
+    revalidatePath("/students");
+    revalidatePath("/dashboard");
 
     return {
       status: "success",
@@ -104,7 +107,8 @@ export async function addStudent(
         },
       };
     }
-    revalidatePath("/dashboard");
+    
+    console.error("Error adding student:", error);
     return {
       status: "error",
       data: {
@@ -163,16 +167,13 @@ export async function updateStudent(
       instrument: result.data.instrument,
       grade: result.data.grade,
       batch: result.data.batch,
-      // Store dates as YYYY-MM-DD strings for SQLite
       dateOfBirth: result.data.dateOfBirth
         ? result.data.dateOfBirth.toISOString().split("T")[0]
         : null,
-      // Ensure joiningDate is always a string, never null
       joiningDate: result.data.joiningDate
         ? result.data.joiningDate.toISOString().split("T")[0]
-        : new Date().toISOString().split("T")[0], // Fallback to today
+        : new Date().toISOString().split("T")[0],
       isActive: result.data.isActive,
-      // Use JavaScript Date for SQLite timestamp field
       updatedAt: new Date(),
     };
 
@@ -181,12 +182,14 @@ export async function updateStudent(
       .set(updatedFields)
       .where(eq(students.id, studentId));
 
-    // Remove or reduce this logging
     if (updateResult.rowsAffected === 0) {
       throw new Error("No student found to update");
     }
 
+    // FIX 2: Revalidate AFTER successful operation with correct paths
+    revalidatePath("/dashboard/admin/students");
     revalidatePath("/students");
+    revalidatePath("/dashboard");
 
     return {
       studentId,
@@ -197,6 +200,7 @@ export async function updateStudent(
       },
     };
   } catch (error) {
+    console.error("Error updating student:", error);
     return {
       studentId,
       initialValues,
@@ -231,7 +235,10 @@ export async function deleteStudent(studentId: number): Promise<ActionState> {
 
     await db.delete(students).where(eq(students.id, studentId));
 
+    // FIX 3: Revalidate AFTER successful operation with correct paths
+    revalidatePath("/dashboard/admin/students");
     revalidatePath("/students");
+    revalidatePath("/dashboard");
 
     return {
       status: "success",
@@ -240,11 +247,12 @@ export async function deleteStudent(studentId: number): Promise<ActionState> {
       },
     };
   } catch (error) {
+    console.error("Error deleting student:", error);
     return {
       status: "error",
       data: {
-        message: `Failed to delete student. Please try again. ${error}`,
-        issues: [`Failed to delete student. Please try again. ${error}`],
+        message: `Failed to delete student. Please try again.`,
+        issues: [`Failed to delete student. Please try again.`],
       },
     };
   }
@@ -257,13 +265,9 @@ export async function getStudents(): Promise<{
   try {
     const rawData = await db.select().from(students).orderBy(students.id);
 
-    // Add debugging to see what we're getting from the database
-    console.log('Raw student data sample:', rawData[0]);
-
     // Safely transform the data to match StudentFormValues
     const formattedStudents: StudentFormValues[] = rawData.map((student) => ({
       ...student,
-      // Safely parse dates with better error handling
       dateOfBirth: student.dateOfBirth 
         ? (() => {
             try {
@@ -312,17 +316,12 @@ export async function getStudentById(studentId: number): Promise<{
       return { error: `Student with ID ${studentId} not found` };
     }
 
-    // Add debugging to see the raw data format
-    console.log('Raw student data for ID', studentId, ':', rawData[0]);
-
     // Safely transform the single student with better error handling
     const formattedStudent: StudentFormValues = {
       ...rawData[0],
-      // Defensive date parsing - handle ISO timestamps from SQLite
       dateOfBirth: rawData[0].dateOfBirth 
         ? (() => {
             try {
-              // Handle both "YYYY-MM-DD" and ISO timestamp formats
               const date = new Date(rawData[0].dateOfBirth);
               return isNaN(date.getTime()) ? null : date;
             } catch {
@@ -333,16 +332,15 @@ export async function getStudentById(studentId: number): Promise<{
         : null,
       joiningDate: (() => {
         try {
-          // Handle both "YYYY-MM-DD" and ISO timestamp formats
           const date = new Date(rawData[0].joiningDate);
           if (isNaN(date.getTime())) {
             console.warn('Invalid joiningDate:', rawData[0].joiningDate);
-            return new Date(); // Fallback to current date
+            return new Date();
           }
           return date;
         } catch {
           console.warn('Failed to parse joiningDate:', rawData[0].joiningDate);
-          return new Date(); // Fallback to current date
+          return new Date();
         }
       })(),
       instrument: rawData[0].instrument ?? "guitar",
