@@ -18,14 +18,14 @@ export default function Navbar() {
       <NavigationMenuList className="space-x-2">
         {options.links.map((item, index) => (
           <NavigationMenuItem key={index}>
-            <NavigationMenuLink
-              className={navigationMenuTriggerStyle()}
-              title={item.text}
-            >
-              <Link href={item.link} passHref>
+            <Link href={item.link} passHref>
+              <NavigationMenuLink
+                className={navigationMenuTriggerStyle()}
+                title={item.text}
+              >
                 {item.text}
-              </Link>
-            </NavigationMenuLink>
+              </NavigationMenuLink>
+            </Link>
           </NavigationMenuItem>
         ))}
         <AuthButton />

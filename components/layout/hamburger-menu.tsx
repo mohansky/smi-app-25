@@ -35,16 +35,16 @@ export default function HamburgerMenu() {
               <NavigationMenuList className=" flex-col gap-5 w-full">
                 {options.links.map((item, index) => (
                   <NavigationMenuItem key={index}>
-                    <NavigationMenuLink
-                      className={navigationMenuTriggerStyle()}
-                      title={item.text}
-                    >
-                      <Link href={item.link} passHref>
+                    <Link href={item.link} passHref>
+                      <NavigationMenuLink
+                        className={navigationMenuTriggerStyle()}
+                        title={item.text}
+                      >
                         <SheetTrigger className="uppercase">
                           {item.text}
                         </SheetTrigger>
-                      </Link>
-                    </NavigationMenuLink>
+                      </NavigationMenuLink>
+                    </Link>
                   </NavigationMenuItem>
                 ))}
               </NavigationMenuList>
