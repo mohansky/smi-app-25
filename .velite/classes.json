@@ -1,0 +1,70 @@
+[
+  {
+    "title": "Drums",
+    "description": "Rs. 3000/- per month 8 X 1 hr sessions twice Weekly",
+    "weight": 2,
+    "slug": "classes/drums",
+    "published": true,
+    "img": "/images/classes/drums.jpg",
+    "duration": "8 x 1hr sessions Weekly twice",
+    "admission": "Admission Rs. 1,000",
+    "fees": "Rs. 3,000/- per month",
+    "crashCourse": "Rs. 18,000/- Weekly 5 classes in 3 months",
+    "overview": [
+      "Rudiments",
+      "Theory",
+      "Time Signature Beats ( 2/4, 3/4, 4/4, etc.)",
+      "How to read music and play/write notations.",
+      "How to play with backing track or accompanied by the teacher "
+    ],
+    "body": "const{jsx:n}=arguments[0];function _createMdxContent(t){const e={p:\"p\",...t.components};return n(e.p,{children:\"Book your demo class today!\"})}return{default:function(t={}){const{wrapper:e}=t.components||{};return e?n(e,{...t,children:n(_createMdxContent,{...t})}):_createMdxContent(t)}};",
+    "slugAsParams": "drums"
+  },
+  {
+    "title": "Guitar",
+    "description": "Rs. 3000/- per month 8 X 1hr sessions twice Weekly",
+    "weight": 1,
+    "slug": "classes/guitar",
+    "published": true,
+    "img": "/images/classes/guitar.jpg",
+    "duration": "8 x 1hr sessions Weekly twice",
+    "admission": "Admission Rs. 1,000",
+    "fees": "Rs. 3,000/- per month",
+    "crashCourse": "Rs. 18,000/- Weekly 5 classes in 3 months",
+    "overview": [
+      "Chart of the finger board",
+      "Finger exercises",
+      "Theory",
+      "How to tune the Guitar",
+      "Scales and Arpeggios",
+      "Major, Minor,7th Chords and relation chords",
+      "How to read Music and play/write",
+      "Transpose"
+    ],
+    "body": "const{jsx:n}=arguments[0];function _createMdxContent(t){const e={p:\"p\",...t.components};return n(e.p,{children:\"Book your demo class today!\"})}return{default:function(t={}){const{wrapper:e}=t.components||{};return e?n(e,{...t,children:n(_createMdxContent,{...t})}):_createMdxContent(t)}};",
+    "slugAsParams": "guitar"
+  },
+  {
+    "title": "Keyboard",
+    "description": "Rs. 3000/- per month 8 X 1 hr sessions twice Weekly",
+    "weight": 3,
+    "slug": "classes/keyboard",
+    "published": true,
+    "img": "/images/classes/keyboard.jpg",
+    "duration": "8 x 1hr sessions Weekly twice",
+    "admission": "Admission Rs. 1,000",
+    "fees": "Rs. 3,000/- per month",
+    "crashCourse": "Rs. 18,000/- Weekly 5 classes in 3 months",
+    "overview": [
+      "Theory",
+      "Understanding the White & Black keys (Natural, Sharps & Flats ) Notes.",
+      "Finger Exercises",
+      "Scales and Arpeggios",
+      "Major, Minor,7th Chords and relation chords",
+      "How to read Music and play/write notations.",
+      "Transpose"
+    ],
+    "body": "const{jsx:n}=arguments[0];function _createMdxContent(t){const e={p:\"p\",...t.components};return n(e.p,{children:\"Book your demo class today!\"})}return{default:function(t={}){const{wrapper:e}=t.components||{};return e?n(e,{...t,children:n(_createMdxContent,{...t})}):_createMdxContent(t)}};",
+    "slugAsParams": "keyboard"
+  }
+]
