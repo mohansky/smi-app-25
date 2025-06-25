@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { ModeToggler } from "@/components/ui/mode-toggler";
 import { options } from "@/.velite";
-import AuthButton from "../buttons/auth-button";
+// import AuthButton from "../buttons/auth-button";
 
 export default function Navbar() {
   return (
@@ -28,7 +28,7 @@ export default function Navbar() {
             </Link>
           </NavigationMenuItem>
         ))}
-        <AuthButton />
+        {/* <AuthButton /> */}
         <ModeToggler />
       </NavigationMenuList>
     </NavigationMenu>
