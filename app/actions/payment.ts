@@ -25,26 +25,29 @@ export async function createPayment(
       description: formData.get("description") as string,
       paymentMethod: formData.get("paymentMethod") as "CASH" | "CARD",
       paymentStatus: formData.get("paymentStatus") as "DUE" | "PAID",
-      transactionId: formData.get("transactionId") || undefined,
-      notes: formData.get("notes") || undefined,
+      transactionId: formData.get("transactionId") as string | null,
+      notes: formData.get("notes") as string | null,
     };
 
     const validatedData = paymentSchema.parse(rawData);
 
+    // Create payment data for database insertion
     const paymentData: InsertPayment = {
       studentId: validatedData.studentId,
       date: validatedData.date,
-      amount: validatedData.amount.toString(),
+      amount: validatedData.amount, // Keep as number, don't convert to string
       description: validatedData.description,
       paymentMethod: validatedData.paymentMethod,
       paymentStatus: validatedData.paymentStatus,
-      transactionId: validatedData.transactionId,
-      notes: validatedData.notes,
+      transactionId: validatedData.transactionId || null, // Explicitly set to null if undefined
+      notes: validatedData.notes || null, // Explicitly set to null if undefined
     };
 
     await db.insert(payments).values(paymentData);
 
     revalidatePath("/payments");
+    revalidatePath("/dashboard/admin/payments"); // Add this if the payments page is at this path
+
     return {
       studentId,
       status: "success",
@@ -53,27 +56,31 @@ export async function createPayment(
       },
     };
   } catch (error) {
-    // console.error("Error adding payment:", error);
+    console.error("Error adding payment:", error);
+
     if (error instanceof z.ZodError) {
       return {
         studentId,
         status: "error",
         data: {
-          message: `Something went wrong: ${error.errors[0].message}`,
-          issues: [error.errors[0].message],
+          message: `Validation error: ${error.errors[0].message}`,
+          issues: error.errors.map((err) => err.message),
         },
       };
-    } else {
+    }
+
     return {
       studentId,
       status: "error",
       data: {
-        message: `An unexpected error occurred. Please try again. ${error}`,
-        issues: [`An unexpected error occurred. Please try again. ${error}`],
+        message: "An unexpected error occurred. Please try again.",
+        issues: [
+          "Failed to create payment. Please check your input and try again.",
+        ],
       },
     };
   }
-}}
+}
 
 export async function getPaymentsByStudent(studentId: number) {
   try {

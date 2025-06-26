@@ -77,6 +77,54 @@ export async function getAllExpenses(params: ExpenseFilterParams) {
   };
 }
 
+// export async function createExpense(
+//   prevState: ExpenseFormState,
+//   formData: FormData
+// ): Promise<ExpenseFormState> {
+//   try {
+//     const rawData = {
+//       date: new Date(formData.get("date") as string),
+//       amount: Number(formData.get("amount")),
+//       description: formData.get("description") as string,
+//       paymentMethod: formData.get("paymentMethod") as "CASH" | "CARD",
+//       paymentStatus: formData.get("paymentStatus") as "DUE" | "PAID",
+//       transactionId: formData.get("transactionId") || undefined,
+//       notes: formData.get("notes") || undefined,
+//     };
+
+//     const validatedData = expenseSchema.parse(rawData);
+
+//     const expenseData: InsertExpense = {
+//       date: validatedData.date,
+//       amount: validatedData.amount.toString(),
+//       description: validatedData.description,
+//       paymentMethod: validatedData.paymentMethod,
+//       expenseStatus: validatedData.expenseStatus,
+//       transactionId: validatedData.transactionId,
+//       notes: validatedData.notes,
+//     };
+
+//     await db.insert(expenses).values(expenseData);
+
+//     revalidatePath("/payments");
+//     return {
+//       status: "success",
+//       data: {
+//         message: "Payment added successfully!",
+//       },
+//     };
+//   } catch (error) {
+//     console.error("Error adding payment:", error);
+//     return {
+//       status: "error",
+//       data: {
+//         issues: ["An unexpected error occurred. Please try again."],
+//       },
+//     };
+//   }
+// }
+
+
 export async function createExpense(
   prevState: ExpenseFormState,
   formData: FormData
@@ -86,63 +134,80 @@ export async function createExpense(
       date: new Date(formData.get("date") as string),
       amount: Number(formData.get("amount")),
       description: formData.get("description") as string,
+      category: formData.get("category") as "UTILITIES" | "RENT" | "MISC",
       paymentMethod: formData.get("paymentMethod") as "CASH" | "CARD",
-      paymentStatus: formData.get("paymentStatus") as "DUE" | "PAID",
-      transactionId: formData.get("transactionId") || undefined,
-      notes: formData.get("notes") || undefined,
+      expenseStatus: formData.get("expenseStatus") as "DUE" | "PAID",
+      transactionId: formData.get("transactionId") as string | null,
+      notes: formData.get("notes") as string | null,
     };
 
     const validatedData = expenseSchema.parse(rawData);
 
     const expenseData: InsertExpense = {
       date: validatedData.date,
-      amount: validatedData.amount.toString(),
+      amount: validatedData.amount, // Keep as number, don't convert to string
       description: validatedData.description,
+      category: validatedData.category,
       paymentMethod: validatedData.paymentMethod,
       expenseStatus: validatedData.expenseStatus,
-      transactionId: validatedData.transactionId,
-      notes: validatedData.notes,
+      transactionId: validatedData.transactionId || null,
+      notes: validatedData.notes || null,
     };
 
     await db.insert(expenses).values(expenseData);
+    
+    revalidatePath("/expenses");
+    revalidatePath("/dashboard/admin/expenses"); // Add proper path revalidation
 
-    revalidatePath("/payments");
     return {
       status: "success",
       data: {
-        message: "Payment added successfully!",
+        message: "Expense added successfully!",
       },
     };
   } catch (error) {
-    console.error("Error adding payment:", error);
+    console.error("Error adding expense:", error);
+    
+    if (error instanceof z.ZodError) {
+      return {
+        status: "error",
+        data: {
+          message: `Validation error: ${error.errors[0].message}`,
+          issues: error.errors.map(err => err.message),
+        },
+      };
+    }
+    
     return {
       status: "error",
       data: {
-        issues: ["An unexpected error occurred. Please try again."],
+        message: "An unexpected error occurred. Please try again.",
+        issues: ["Failed to create expense. Please check your input and try again."],
       },
     };
   }
 }
 
 export async function deleteExpenseRecord(id: number): Promise<ActionState> {
-  try { 
+  try {
     const existingRecord = await db.query.expenses.findFirst({
       where: eq(expenses.id, id),
     });
-
+    
     if (!existingRecord) {
       return {
         status: "error",
         data: {
           message: `Expense record with ID ${id} not found`,
-          issues: [`Expense record with ID ${id} not found`],
         },
       };
     }
  
     await db.delete(expenses).where(eq(expenses.id, id));
-
+    
     revalidatePath("/expenses");
+    revalidatePath("/dashboard/admin/expenses");
+    
     return {
       status: "success",
       data: {
@@ -150,22 +215,59 @@ export async function deleteExpenseRecord(id: number): Promise<ActionState> {
       },
     };
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return {
-        status: "error",
-        data: {
-          message: `Something went wrong: ${error.errors[0].message}`,
-          issues: [error.errors[0].message],
-        },
-      };
-    } else {
-      return {
-        status: "error",
-        data: {
-          message: "An unexpected error occurred. Please try again.",
-          issues: ["An unexpected error occurred. Please try again."],
-        },
-      };
-    }
+    console.error("Error deleting expense:", error);
+    
+    return {
+      status: "error",
+      data: {
+        message: "An unexpected error occurred while deleting the expense.",
+      },
+    };
   }
 }
+
+// export async function deleteExpenseRecord(id: number): Promise<ActionState> {
+//   try { 
+//     const existingRecord = await db.query.expenses.findFirst({
+//       where: eq(expenses.id, id),
+//     });
+
+//     if (!existingRecord) {
+//       return {
+//         status: "error",
+//         data: {
+//           message: `Expense record with ID ${id} not found`,
+//           issues: [`Expense record with ID ${id} not found`],
+//         },
+//       };
+//     }
+ 
+//     await db.delete(expenses).where(eq(expenses.id, id));
+
+//     revalidatePath("/expenses");
+//     return {
+//       status: "success",
+//       data: {
+//         message: "Expense deleted successfully",
+//       },
+//     };
+//   } catch (error) {
+//     if (error instanceof z.ZodError) {
+//       return {
+//         status: "error",
+//         data: {
+//           message: `Something went wrong: ${error.errors[0].message}`,
+//           issues: [error.errors[0].message],
+//         },
+//       };
+//     } else {
+//       return {
+//         status: "error",
+//         data: {
+//           message: "An unexpected error occurred. Please try again.",
+//           issues: ["An unexpected error occurred. Please try again."],
+//         },
+//       };
+//     }
+//   }
+// }

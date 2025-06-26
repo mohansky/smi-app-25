@@ -1,6 +1,7 @@
 import {
   User,
   UserRoundPen,
+  Users,
   IndianRupee,
   CalendarDays,
   Calendar1,
@@ -62,6 +63,12 @@ export const adminMenu: {
     url: "/dashboard/admin/schedule",
     id: 8,
     icon: CalendarDays,
+  },
+    {
+    text: "Users",
+    url: "/dashboard/admin/users",
+    id: 9,
+    icon: Users,
   },
 ];
 

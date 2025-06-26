@@ -1,27 +1,29 @@
-// import { Container } from "@/components/custom-ui/container";
+// app/dashboard/admin/payments/page.tsx
 import { paymentColumns } from "@/components/columns/payments-columns";
 import { getAllPayments } from "@/app/actions/payment";
 import { CustomDataTable } from "@/components/custom-ui/custom-data-table";
 import StudentDetailsLoading from "@/components/skeletons/student-details-skeleton";
 import { Suspense } from "react";
+import { PaymentFormValues } from "@/lib/validations/payments";
 
 export default async function PaymentsPage() {
   const result = await getAllPayments();
-
+  
   if (result.success && result.data?.payments) {
-    const transformedPayments = result.data.payments.map((payment) => ({
-      ...payment,
-      studentId:
-        typeof payment.studentId === "string"
-          ? parseInt(payment.studentId)
-          : payment.studentId,
+    // Transform raw database data to match PaymentFormValues type
+    const transformedPayments: PaymentFormValues[] = result.data.payments.map((payment) => ({
+      id: payment.id,
+      studentId: payment.studentId,
       studentName: payment.studentName,
-      amount:
-        typeof payment.amount === "string"
-          ? parseFloat(payment.amount)
-          : payment.amount,
-      notes: payment.notes ?? undefined,
-      transactionId: payment.transactionId ?? undefined,
+      date: new Date(payment.date),
+      amount: Number(payment.amount),
+      description: payment.description,
+      paymentMethod: payment.paymentMethod as "CASH" | "CARD",
+      paymentStatus: payment.paymentStatus as "DUE" | "PAID",
+      transactionId: payment.transactionId,
+      notes: payment.notes,
+      createdAt: new Date(payment.createdAt),
+      updatedAt: new Date(payment.updatedAt),
     }));
 
     return (
@@ -39,6 +41,17 @@ export default async function PaymentsPage() {
       </Suspense>
     );
   } else {
-    return <div>Error loading Payments</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">
+            Error Loading Payments
+          </h2>
+          <p className="text-gray-600">
+            {result.error || "Unable to fetch payments at this time"}
+          </p>
+        </div>
+      </div>
+    );
   }
 }
