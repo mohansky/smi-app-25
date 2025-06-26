@@ -23,9 +23,9 @@ export default function RootLayout({
   return (
     <>
       <Container width="marginy" animate={false} className="w-[98vw] md:w-[75vw] mb-10">
-        <SidebarProvider>
+        <SidebarProvider defaultOpen={true}>
           <AppSidebar />
-          <SidebarTrigger />
+          <SidebarTrigger className="block md:hidden" />
           <main>{children}</main>
         </SidebarProvider>
       </Container>

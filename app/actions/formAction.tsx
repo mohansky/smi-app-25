@@ -103,7 +103,8 @@ export const onFormAction = async (
     try {
       // Send email for legitimate submissions
       await resend.emails.send({
-        from: "MK <mail@mohankumar.dev>",
+        // from: "MK <mail@mohankumar.dev>",
+        from: process.env.RESEND_FROM_EMAIL!,
         to: "mohansky@gmail.com",
         subject: `Enquiry from ${parsed.data.senderName}`,
         replyTo: parsed.data.email as string,

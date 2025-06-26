@@ -2,7 +2,7 @@
 const nextConfig = {
   turbopack: {
     resolveAlias: {
-      '@': './src',
+      '@': './',
     },
   },
   

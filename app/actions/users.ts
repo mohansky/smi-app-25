@@ -1,16 +1,100 @@
 "use server";
 import { db } from "@/db/drizzle";
 import { eq } from "drizzle-orm";
-import { students, users } from "@/db/schema";
+import { students, users, verificationTokens } from "@/db/schema";
 import { CreateUserSchema } from "@/lib/validations/user";
 import * as bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import { revalidatePath } from "next/cache";
 import { ActionState } from "@/types";
+import { sendVerificationEmail } from "@/lib/email";
+
+// export async function createUser(prevState: unknown, formData: FormData) {
+//   try {
+//     // Log the incoming form data for debugging
+//     console.log("Incoming form data:", {
+//       name: formData.get("name"),
+//       email: formData.get("email"),
+//       role: formData.get("role"),
+//     });
+
+//     // Validate form data using Zod
+//     const validatedFields = CreateUserSchema.safeParse({
+//       name: formData.get("name"),
+//       email: formData.get("email"),
+//       password: formData.get("password"),
+//       role: formData.get("role") || undefined,
+//     });
+
+//     // Check validation results
+//     if (!validatedFields.success) {
+//       console.error("Validation errors:", validatedFields.error.errors);
+//       return {
+//         error: validatedFields.error.errors[0].message,
+//       };
+//     }
+
+//     const { name, email, password, role } = validatedFields.data;
+
+//     // Check if user already exists
+//     const existingUser = await db.query.users.findFirst({
+//       where: eq(users.email, email),
+//     });
+
+//     if (existingUser) {
+//       console.warn("User with this email already exists");
+//       return {
+//         error: "Email already exists",
+//       };
+//     }
+
+//     // Hash the password
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     // Log details before insertion (be careful with sensitive info)
+//     console.log("Attempting to create user:", {
+//       name: name,
+//       email,
+//       role: role || "USER",
+//     });
+
+//     // Create user
+//     const newUser = await db
+//       .insert(users)
+//       .values({
+//         id: uuidv4(), // Explicitly generate UUID
+//         name: name,
+//         email,
+//         password: hashedPassword,
+//         role: role || "USER", // Ensure role is set
+//         isVerified: false,
+//       })
+//       .returning();
+
+//     console.log("User created successfully:", newUser[0]);
+
+//     return {
+//       success: "Account created successfully!",
+//     };
+//   } catch (error) {
+//     // Log the full error for debugging
+//     console.error("Detailed user creation error:", error);
+
+//     // If it's a database-specific error, you might want to log more details
+//     if (error instanceof Error) {
+//       return {
+//         error: `Creation failed: ${error.message}`,
+//       };
+//     }
+
+//     return {
+//       error: "An unexpected error occurred during account creation",
+//     };
+//   }
+// }
 
 export async function createUser(prevState: unknown, formData: FormData) {
   try {
-    // Log the incoming form data for debugging
     console.log("Incoming form data:", {
       name: formData.get("name"),
       email: formData.get("email"),
@@ -25,7 +109,6 @@ export async function createUser(prevState: unknown, formData: FormData) {
       role: formData.get("role") || undefined,
     });
 
-    // Check validation results
     if (!validatedFields.success) {
       console.error("Validation errors:", validatedFields.error.errors);
       return {
@@ -50,7 +133,6 @@ export async function createUser(prevState: unknown, formData: FormData) {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Log details before insertion (be careful with sensitive info)
     console.log("Attempting to create user:", {
       name: name,
       email,
@@ -61,31 +143,57 @@ export async function createUser(prevState: unknown, formData: FormData) {
     const newUser = await db
       .insert(users)
       .values({
-        id: uuidv4(), // Explicitly generate UUID
+        id: uuidv4(),
         name: name,
         email,
         password: hashedPassword,
-        role: role || "USER", // Ensure role is set
+        role: role || "USER",
         isVerified: false,
       })
       .returning();
 
     console.log("User created successfully:", newUser[0]);
 
-    return {
-      success: "Account created successfully!",
-    };
-  } catch (error) {
-    // Log the full error for debugging
-    console.error("Detailed user creation error:", error);
+    // Generate verification token
+    const verificationToken = uuidv4();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    // If it's a database-specific error, you might want to log more details
+    // Save verification token
+    await db.insert(verificationTokens).values({
+      id: uuidv4(), // Generate UUID for the token record
+      email,
+      token: verificationToken,
+      expires: expiresAt,
+    });
+
+    // Send verification email
+    const emailResult = await sendVerificationEmail(
+      email,
+      name,
+      verificationToken
+    );
+
+    if (!emailResult.success) {
+      console.error("Failed to send verification email:", emailResult.error);
+      return {
+        success: "Account created successfully! Please check your email for verification instructions.",
+        warning: "Verification email could not be sent. Please contact support.",
+      };
+    }
+
+    return {
+      success: "Account created successfully! Please check your email to verify your account.",
+    };
+
+  } catch (error) {
+    console.error("Detailed user creation error:", error);
+    
     if (error instanceof Error) {
       return {
         error: `Creation failed: ${error.message}`,
       };
     }
-
+    
     return {
       error: "An unexpected error occurred during account creation",
     };

@@ -20,8 +20,8 @@ import {
 import { ChevronUp, User2 } from "lucide-react";
 import { SignOutButton } from "../buttons/sign-out-button";
 import { adminMenu, userMenu } from "@/data/sidebar-menu";
-import { UserProfile } from "./user-profile";
-// import { Skeleton } from "../ui/skeleton";
+import { UserProfile } from "./user-profile"; 
+import { useIsMobile } from "@/hooks/use-mobile"; 
 
 interface Item {
   icon: React.ComponentType | string;
@@ -34,10 +34,7 @@ function SidebarIcon({ item }: { item: Item }) {
 
 export function AppSidebar() {
   const { data: session, status } = useSession();
-
-  // if (status === "loading") {
-  //   return <Skeleton className="h-[70vh] w-72 md:w-64" />;
-  // }
+  const isMobile = useIsMobile();
 
   if (status === "unauthenticated") {
     return <div>Please log in.</div>;
@@ -46,11 +43,11 @@ export function AppSidebar() {
   const menu = session?.user?.role === "ADMIN" ? adminMenu : userMenu;
 
   return (
-    <div className="h-[80vh] my-auto">
+    <div className="h-full">
       <Sidebar
-        variant="floating"
-        collapsible="offcanvas"
-        className="w-[--sidebar-width] h-[70vh] my-auto"
+        variant={isMobile ? "floating" : "inset"}
+        collapsible={isMobile ? "offcanvas" : "none"}
+        className="mr-3"
       >
         <SidebarContent>
           <SidebarGroup>

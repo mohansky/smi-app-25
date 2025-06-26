@@ -1,10 +1,5 @@
 // db/schema.ts
-import {
-  sqliteTable,
-  integer,
-  text,
-  real,
-} from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, text, real } from "drizzle-orm/sqlite-core";
 // import { sql } from "drizzle-orm";
 import { relations } from "drizzle-orm";
 
@@ -44,17 +39,19 @@ export type Instrument = (typeof INSTRUMENTS)[keyof typeof INSTRUMENTS];
 
 // User records
 export const users = sqliteTable("users", {
-  id: text('id').primaryKey(), // UUID as text
-  name: text('name'),
-  email: text('email').unique(),
-  password: text('password'),
-  role: text('role', { enum: ['USER', 'ADMIN'] }).default('USER'),
-  isVerified: integer('is_verified', { mode: 'boolean' }).default(false),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  id: text("id").primaryKey(), // UUID as text
+  name: text("name"),
+  email: text("email").unique(),
+  password: text("password"),
+  role: text("role", { enum: ["USER", "ADMIN"] }).default("USER"),
+  isVerified: integer("is_verified", { mode: "boolean" }).default(false),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(
+    () => new Date()
+  ),
 });
 
 // Student records
-export const students = sqliteTable("students", { 
+export const students = sqliteTable("students", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   email: text("email").unique().notNull(),
@@ -67,9 +64,13 @@ export const students = sqliteTable("students", {
   batch: text("batch").$type<Batch>().notNull(),
   dateOfBirth: text("date_of_birth"), // Store as "YYYY-MM-DD"
   joiningDate: text("joining_date").notNull(), // Store as "YYYY-MM-DD"
-  isActive: integer("is_active", { mode: 'boolean' }).notNull().default(true),
-  createdAt: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
-  updatedAt: integer("updated_at", { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .$defaultFn(() => new Date())
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .$defaultFn(() => new Date())
+    .notNull(),
 });
 
 // Attendance records
@@ -89,15 +90,19 @@ export const payments = sqliteTable("payments", {
   studentId: integer("student_id")
     .references(() => students.id, { onDelete: "cascade" })
     .notNull(),
-  date: integer("date", { mode: 'timestamp' }).notNull(), // Full timestamp for payments
+  date: integer("date", { mode: "timestamp" }).notNull(), // Full timestamp for payments
   amount: real("amount").notNull(), // SQLite uses REAL for decimals
   description: text("description").notNull(),
   paymentMethod: text("payment_method").notNull(), // "CASH" or "CARD"
   paymentStatus: text("payment_status").notNull(), // "DUE" or "PAID"
   transactionId: text("transaction_id"),
   notes: text("notes"),
-  created_at: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
-  updated_at: integer("updated_at", { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+  created_at: integer("created_at", { mode: "timestamp" })
+    .$defaultFn(() => new Date())
+    .notNull(),
+  updated_at: integer("updated_at", { mode: "timestamp" })
+    .$defaultFn(() => new Date())
+    .notNull(),
 });
 
 export type InsertPayment = typeof payments.$inferInsert;
@@ -105,7 +110,7 @@ export type InsertPayment = typeof payments.$inferInsert;
 // Expense records
 export const expenses = sqliteTable("expenses", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  date: integer("date", { mode: 'timestamp' }).notNull(), // Full timestamp for expenses
+  date: integer("date", { mode: "timestamp" }).notNull(), // Full timestamp for expenses
   amount: real("amount").notNull(), // SQLite uses REAL for decimals
   description: text("description").notNull(),
   category: text("category").default("MISC").notNull(), // "UTILITIES", "RENT", "MISC"
@@ -113,8 +118,12 @@ export const expenses = sqliteTable("expenses", {
   paymentMethod: text("payment_method").default("CASH").notNull(), // "CASH" or "CARD"
   transactionId: text("transaction_id"),
   notes: text("notes"),
-  created_at: integer("created_at", { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
-  updated_at: integer("updated_at", { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+  created_at: integer("created_at", { mode: "timestamp" })
+    .$defaultFn(() => new Date())
+    .notNull(),
+  updated_at: integer("updated_at", { mode: "timestamp" })
+    .$defaultFn(() => new Date())
+    .notNull(),
 });
 
 export type InsertExpense = typeof expenses.$inferInsert;
@@ -147,7 +156,19 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
   }),
 }));
 
-// Export types for easier use
+export const verificationTokens = sqliteTable("verification_tokens", {
+  id: text("id").primaryKey(), // UUID as text (you'll need to generate this manually)
+  email: text("email").notNull(),
+  token: text("token").notNull().unique(),
+  expires: integer("expires", { mode: "timestamp" }).notNull(), // SQLite timestamp
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .$defaultFn(() => new Date())
+    .notNull(),
+});
+
+// Export types
+export type VerificationToken = typeof verificationTokens.$inferSelect;
+export type NewVerificationToken = typeof verificationTokens.$inferInsert;
 export type Student = typeof students.$inferSelect;
 export type NewStudent = typeof students.$inferInsert;
 export type User = typeof users.$inferSelect;

@@ -173,7 +173,7 @@ export const usersColumns: ColumnDef<UserData>[] = [
                           ? "default"
                           : user.role === "USER"
                             ? "secondary"
-                            : "outline"
+                            : "destructive"
                       }
                       className="ml-2 capitalize"
                     >

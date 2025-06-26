@@ -293,9 +293,9 @@ export function CustomDataTable<TData, TValue>({
         </div>
       )}
 
-      <div className="rounded-md border">
+      <div className="">
         <div className="overflow-x-auto">
-          <Table className="min-w-full border-collapse border">
+          <Table className="min-w-full rounded-sm border-1">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
@@ -318,7 +318,7 @@ export function CustomDataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className="even:bg-muted/75"
+                    className="even:bg-muted/50"
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
