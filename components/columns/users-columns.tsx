@@ -36,6 +36,28 @@ export type UserData = {
 };
 
 export const usersColumns: ColumnDef<UserData>[] = [
+{
+  accessorKey: "id",
+  header: ({ column }) => {
+    return (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="w-20"
+      >
+        ID No.
+        <CaretSortIcon className="ml-2 h-4 w-4" />
+      </Button>
+    );
+  },
+  cell: ({ row }) => {
+    const id = row.getValue("id") as string | number;
+    const lastFourDigits = String(id).slice(-4);
+    return (
+      <div className="capitalize">{lastFourDigits}</div>
+    );
+  },
+},
   {
     accessorKey: "name",
     header: ({ column }) => {
