@@ -1,30 +1,29 @@
 // app/dashboard/admin/students/page.tsx
 import { Suspense } from "react";
 import { getStudents } from "@/app/actions/student";
-import { Container } from "@/components/custom-ui/container";
 import { studentsColumns } from "@/components/columns/students-columns";
 import CustomDataTable from "@/components/custom-ui/custom-data-table";
 import TablesPageLoading from "@/components/skeletons/tables-skeleton";
 
-// FIX 4: Disable caching for this page to ensure fresh data
+// Disable caching for fresh data
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 async function StudentsContent() {
   const { students, error } = await getStudents();
-  
+ 
   if (error) {
     return (
-      <Container width="marginy">
-        <div className="text-red-500">Error loading students: {error}</div>
-      </Container>
+      <div className="p-4">
+        <div className="text-destructive">Error loading students: {error}</div>
+      </div>
     );
   }
 
   const studentsData = students || [];
-
+  
   return (
-    <div className="w-[98vw] md:w-[75vw] mb-10">
+    <div className="container mx-auto p-4 max-w-full">
       <CustomDataTable
         columns={studentsColumns}
         data={studentsData}
