@@ -1,4 +1,5 @@
 "use client";
+// app/components/custom-ui/custom-data-table.tsx
 import * as React from "react";
 import {
   ColumnDef,
@@ -293,14 +294,20 @@ export function CustomDataTable<TData, TValue>({
         </div>
       )}
 
-      <div className="">
+      <div className="p-1 bg-muted rounded-lg">
         <div className="overflow-x-auto">
-          <Table className="min-w-full rounded-sm border-1">
+          <Table className="min-w-full">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
+                  {headerGroup.headers.map((header, index) => (
+                    <TableHead
+                      key={header.id}
+                      className={cn(
+                        index === 1 &&
+                          "sticky left-0 z-20 bg-muted shadow-sm max-w-fit"
+                      )}
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -308,6 +315,14 @@ export function CustomDataTable<TData, TValue>({
                             header.getContext()
                           )}
                     </TableHead>
+                    // <TableHead key={header.id} >
+                    //   {header.isPlaceholder
+                    //     ? null
+                    //     : flexRender(
+                    //         header.column.columnDef.header,
+                    //         header.getContext()
+                    //       )}
+                    // </TableHead>
                   ))}
                 </TableRow>
               ))}
@@ -320,8 +335,14 @@ export function CustomDataTable<TData, TValue>({
                     data-state={row.getIsSelected() && "selected"}
                     className="even:bg-muted/50"
                   >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                    {row.getVisibleCells().map((cell, index) => (
+                      <TableCell
+                        key={cell.id}
+                        className={cn(
+                          index === 1 && "sticky left-0 z-10 max-w-fit bg-muted"
+                        )}
+                      >
+                        {/* <TableCell key={cell.id}> */}
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()

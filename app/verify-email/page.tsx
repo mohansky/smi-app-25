@@ -1,21 +1,34 @@
+// app/verify-email/page.tsx
 import { db } from "@/db/drizzle";
 import { eq, and, gt } from "drizzle-orm";
 import { users, verificationTokens } from "@/db/schema";
 import { redirect } from "next/navigation";
+import { Container } from "@/components/custom-ui/container";
+import { Heading } from "@/components/custom-ui/heading";
 
 interface VerifyEmailPageProps {
-  searchParams: {
+  searchParams: Promise<{
     token?: string;
-  };
+  }>;
 }
 
 export default async function VerifyEmailPage({
   searchParams,
 }: VerifyEmailPageProps) {
-  const { token } = searchParams;
+  // Await searchParams before accessing its properties
+  const { token } = await searchParams;
 
   if (!token) {
-    return <div>Invalid verification link</div>;
+    return (
+      <Container
+        width="marginxy"
+        className="min-h-[60vh] flex items-center justify-center"
+      >
+        <Heading size="sm" className="text-center">
+          Invalid verification link
+        </Heading>
+      </Container>
+    );
   }
 
   try {
@@ -28,7 +41,16 @@ export default async function VerifyEmailPage({
     });
 
     if (!verificationToken) {
-      return <div>Invalid or expired verification link</div>;
+      return (
+        <Container
+          width="marginxy"
+          className="min-h-[60vh] flex items-center justify-center"
+        >
+          <Heading size="sm" className="text-center">
+            Invalid or expired verification link
+          </Heading>
+        </Container>
+      );
     }
 
     // Update user as verified

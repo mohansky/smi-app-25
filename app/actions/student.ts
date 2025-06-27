@@ -2,7 +2,7 @@
 import { db } from "@/db/drizzle";
 import { StudentFormValues, studentSchema } from "@/lib/validations/student";
 import { revalidatePath } from "next/cache";
-import { eq, InferInsertModel } from "drizzle-orm";
+import { eq, and, InferInsertModel } from "drizzle-orm";
 import { students } from "@/db/schema";
 import {
   ActionState,
@@ -10,11 +10,127 @@ import {
   UpdateStudentFormState,
 } from "@/types";
 
+// export async function addStudent(
+//   prevState: AddStudentFormState,
+//   formData: FormData
+// ): Promise<AddStudentFormState> {
+//   try {
+//     const rawFormData = {
+//       name: formData.get("name") as string,
+//       email: formData.get("email") as string,
+//       phone: formData.get("phone") as string,
+//       instrument: formData.get("instrument") as string,
+//       grade: formData.get("grade") as string,
+//       batch: formData.get("batch") as string,
+//       dateOfBirth: formData.get("dateOfBirth") as string | null,
+//       joiningDate: formData.get("joiningDate") as string | null,
+//       isActive: formData.get("isActive") === "true",
+//     };
+
+//     const validationResult = studentSchema.safeParse(rawFormData);
+//     if (!validationResult.success) {
+//       return {
+//         status: "error",
+//         data: {
+//           message: Object.entries(
+//             validationResult.error.flatten().fieldErrors
+//           ).flatMap(([field, errors]) =>
+//             errors.map((error) => `${field}: ${error}`)
+//           ),
+//           issues: Object.entries(
+//             validationResult.error.flatten().fieldErrors
+//           ).flatMap(([field, errors]) =>
+//             errors.map((error) => `${field}: ${error}`)
+//           ),
+//         },
+//       };
+//     }
+
+//     const data = validationResult.data;
+
+//     const existingStudent = await db.query.students.findFirst({
+//       where: (students, { eq, and }) =>
+//         and(eq(students.email, data.email), eq(students.phone, data.phone)),
+//     });
+
+//     if (existingStudent) {
+//       return {
+//         status: "existingStudent",
+//         data: {
+//           message: ["A student with this email already exists."],
+//           issues: ["A student with this email already exists."],
+//         },
+//       };
+//     }
+
+//     const studentId = parseInt(data.phone.slice(-5), 10);
+
+//     const insertData: InferInsertModel<typeof students> = {
+//       id: studentId,
+//       name: data.name,
+//       email: data.email,
+//       phone: data.phone,
+//       instrument: data.instrument,
+//       grade: data.grade,
+//       batch: data.batch,
+//       dateOfBirth: data.dateOfBirth
+//         ? new Date(data.dateOfBirth).toISOString().split("T")[0]
+//         : null,
+//       joiningDate: new Date(data.joiningDate).toISOString().split("T")[0],
+//       isActive: data.isActive ?? true,
+//     };
+
+//     await db.insert(students).values(insertData);
+
+//     // FIX 1: Revalidate AFTER successful operation
+//     revalidatePath("/dashboard/admin/students");
+//     revalidatePath("/students");
+//     revalidatePath("/dashboard");
+
+//     return {
+//       status: "success",
+//       data: {
+//         message: "Student added successfully!",
+//       },
+//     };
+//   } catch (error) {
+//     // SQLite constraint error handling
+//     if (
+//       error instanceof Error &&
+//       error.message.includes("UNIQUE constraint failed")
+//     ) {
+//       return {
+//         status: "existingStudent",
+//         data: {
+//           message: "A student with this email already exists.",
+//           issues: ["A student with this email already exists."],
+//         },
+//       };
+//     }
+
+//     console.error("Error adding student:", error);
+//     return {
+//       status: "error",
+//       data: {
+//         message: "An unexpected error occurred. Please try again.",
+//         issues: ["An unexpected error occurred. Please try again."],
+//       },
+//     };
+//   }
+// }
+
 export async function addStudent(
   prevState: AddStudentFormState,
   formData: FormData
 ): Promise<AddStudentFormState> {
   try {
+    // Log all FormData entries for debugging
+    console.log("=== FORM DATA DEBUG ===");
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}:`, value, typeof value);
+    }
+    console.log("========================");
+
     const rawFormData = {
       name: formData.get("name") as string,
       email: formData.get("email") as string,
@@ -27,8 +143,22 @@ export async function addStudent(
       isActive: formData.get("isActive") === "true",
     };
 
+    console.log("Raw form data:", rawFormData);
+
     const validationResult = studentSchema.safeParse(rawFormData);
     if (!validationResult.success) {
+      console.error("=== VALIDATION ERRORS ===");
+      console.error("Full error object:", validationResult.error);
+      console.error(
+        "Field errors:",
+        validationResult.error.flatten().fieldErrors
+      );
+      console.error(
+        "Form errors:",
+        validationResult.error.flatten().formErrors
+      );
+      console.error("========================");
+
       return {
         status: "error",
         data: {
@@ -48,9 +178,12 @@ export async function addStudent(
 
     const data = validationResult.data;
 
+    // FIXED: Use direct imports instead of callback
     const existingStudent = await db.query.students.findFirst({
-      where: (students, { eq, and }) =>
-        and(eq(students.email, data.email), eq(students.phone, data.phone)),
+      where: and(
+        eq(students.email, data.email),
+        eq(students.phone, data.phone)
+      ),
     });
 
     if (existingStudent) {
@@ -82,7 +215,6 @@ export async function addStudent(
 
     await db.insert(students).values(insertData);
 
-    // FIX 1: Revalidate AFTER successful operation
     revalidatePath("/dashboard/admin/students");
     revalidatePath("/students");
     revalidatePath("/dashboard");
@@ -94,7 +226,8 @@ export async function addStudent(
       },
     };
   } catch (error) {
-    // SQLite constraint error handling
+    console.error("Full error details:", error);
+
     if (
       error instanceof Error &&
       error.message.includes("UNIQUE constraint failed")
@@ -107,8 +240,7 @@ export async function addStudent(
         },
       };
     }
-    
-    console.error("Error adding student:", error);
+
     return {
       status: "error",
       data: {
@@ -268,7 +400,7 @@ export async function getStudents(): Promise<{
     // Safely transform the data to match StudentFormValues
     const formattedStudents: StudentFormValues[] = rawData.map((student) => ({
       ...student,
-      dateOfBirth: student.dateOfBirth 
+      dateOfBirth: student.dateOfBirth
         ? (() => {
             try {
               const date = new Date(student.dateOfBirth);
@@ -319,13 +451,13 @@ export async function getStudentById(studentId: number): Promise<{
     // Safely transform the single student with better error handling
     const formattedStudent: StudentFormValues = {
       ...rawData[0],
-      dateOfBirth: rawData[0].dateOfBirth 
+      dateOfBirth: rawData[0].dateOfBirth
         ? (() => {
             try {
               const date = new Date(rawData[0].dateOfBirth);
               return isNaN(date.getTime()) ? null : date;
             } catch {
-              console.warn('Invalid dateOfBirth:', rawData[0].dateOfBirth);
+              console.warn("Invalid dateOfBirth:", rawData[0].dateOfBirth);
               return null;
             }
           })()
@@ -334,12 +466,12 @@ export async function getStudentById(studentId: number): Promise<{
         try {
           const date = new Date(rawData[0].joiningDate);
           if (isNaN(date.getTime())) {
-            console.warn('Invalid joiningDate:', rawData[0].joiningDate);
+            console.warn("Invalid joiningDate:", rawData[0].joiningDate);
             return new Date();
           }
           return date;
         } catch {
-          console.warn('Failed to parse joiningDate:', rawData[0].joiningDate);
+          console.warn("Failed to parse joiningDate:", rawData[0].joiningDate);
           return new Date();
         }
       })(),

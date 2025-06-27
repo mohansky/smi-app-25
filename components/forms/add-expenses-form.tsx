@@ -1,5 +1,7 @@
 "use client";
-import { useActionState, useEffect } from "react";
+// app/components/forms/add-expenses-form.tsx
+import { useActionState, useState, useMemo } from "react";
+import { debounce } from "lodash";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,18 +24,31 @@ import { ExpenseFormValues, expenseSchema } from "@/lib/validations/expenses";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { FullActionState  } from "@/types";
-// import { FullActionState, ExpenseFormState } from "@/types";
+import { ActionState } from "@/types";
 import { DialogClose, DialogFooter } from "../ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+
+// Helper function to format date for input
+const formatDateForInput = (date: Date): string => {
+  try {
+    return date.toISOString().split("T")[0];
+  } catch {
+    return "";
+  }
+};
+
+// Define proper types for the enum values
+type PaymentMethodType = "CASH" | "CARD";
+type CategoryType = "UTILITIES" | "RENT" | "MISC";
+type ExpenseStatusType = "DUE" | "PAID";
 
 export const AddExpenseForm = ({
   createExpense,
 }: {
   createExpense: (
-    prevState: FullActionState,
+    prevState: ActionState,
     data: FormData
-  ) => Promise<FullActionState>;
+  ) => Promise<ActionState>;
 }) => {
   const [state, formAction, isPending] = useActionState(createExpense, {
     status: "idle",
@@ -43,10 +58,12 @@ export const AddExpenseForm = ({
     },
   });
 
+  const today = new Date();
+
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
-      date: new Date(),
+      date: today,
       amount: 0,
       description: "",
       category: "MISC",
@@ -55,17 +72,20 @@ export const AddExpenseForm = ({
       transactionId: "",
       notes: "",
     },
-    mode: "onSubmit",
+    mode: "onBlur", // Changed from "onSubmit" to provide better user feedback
   });
 
-  useEffect(() => {
-    const subscription = form.watch((values) => {
-      form.trigger();
-      return values;
-    });
+  // Track form values in state to ensure they're included in FormData
+  const [date, setDate] = useState(formatDateForInput(today));
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("CASH");
+  const [category, setCategory] = useState<CategoryType>("MISC");
+  const [expenseStatus, setExpenseStatus] = useState<ExpenseStatusType>("PAID");
 
-    return () => subscription.unsubscribe();
-  }, [form]);
+  // Debounce form validation to improve performance
+  const debouncedTrigger = useMemo(
+    () => debounce(() => form.trigger(), 300),
+    [form]
+  );
 
   if (state.status === "success") {
     return (
@@ -106,6 +126,12 @@ export const AddExpenseForm = ({
         )}
         <Form {...form}>
           <form action={formAction} className="space-y-6">
+            {/* Hidden inputs to ensure FormData includes all values */}
+            <input type="hidden" name="date" value={date} />
+            <input type="hidden" name="paymentMethod" value={paymentMethod} />
+            <input type="hidden" name="category" value={category} />
+            <input type="hidden" name="expenseStatus" value={expenseStatus} />
+
             <FormField
               control={form.control}
               name="date"
@@ -115,24 +141,23 @@ export const AddExpenseForm = ({
                   <FormControl>
                     <Input
                       type="date"
-                      value={
-                        field.value instanceof Date
-                          ? field.value.toISOString().split("T")[0]
-                          : ""
-                      }
+                      value={date}
                       onChange={(e) => {
-                        const date = new Date(e.target.value);
-                        field.onChange(date);
+                        setDate(e.target.value);
+                        if (e.target.value) {
+                          field.onChange(new Date(e.target.value));
+                        }
+                        debouncedTrigger();
                       }}
                       onBlur={field.onBlur}
-                      name={field.name}
-                      ref={field.ref}
+                      name="date"
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
             <div className="grid md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
@@ -146,6 +171,10 @@ export const AddExpenseForm = ({
                         placeholder="Enter amount"
                         step="0.50"
                         {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          debouncedTrigger();
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -160,7 +189,14 @@ export const AddExpenseForm = ({
                   <FormItem className="col-span-2">
                     <FormLabel>Expense Description</FormLabel>
                     <FormControl>
-                      <Input placeholder="Expense description" {...field} />
+                      <Input 
+                        placeholder="Expense description" 
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          debouncedTrigger();
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -179,26 +215,30 @@ export const AddExpenseForm = ({
                       <Input
                         placeholder="Enter transaction ID (optional)"
                         {...field}
-                        value={field.value ?? " "}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          debouncedTrigger();
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              
               <FormField
                 control={form.control}
                 name="paymentMethod"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Payment Method</FormLabel>
-                    <Input
-                      type="hidden"
-                      name="paymentMethod"
-                      value={field.value}
-                    />
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value: PaymentMethodType) => {
+                        field.onChange(value);
+                        setPaymentMethod(value);
+                        debouncedTrigger();
+                      }}
                       defaultValue={field.value}
                       value={field.value}
                     >
@@ -216,19 +256,19 @@ export const AddExpenseForm = ({
                   </FormItem>
                 )}
               />
+              
               <FormField
                 control={form.control}
                 name="category"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Expense Category</FormLabel>
-                    <Input
-                      type="hidden"
-                      name="category"
-                      value={field.value}
-                    />
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value: CategoryType) => {
+                        field.onChange(value);
+                        setCategory(value);
+                        debouncedTrigger();
+                      }}
                       defaultValue={field.value}
                       value={field.value}
                     >
@@ -256,13 +296,12 @@ export const AddExpenseForm = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Expense Status</FormLabel>
-                    <Input
-                      type="hidden"
-                      name="expenseStatus"
-                      value={field.value}
-                    />
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value: ExpenseStatusType) => {
+                        field.onChange(value);
+                        setExpenseStatus(value);
+                        debouncedTrigger();
+                      }}
                       defaultValue={field.value}
                       value={field.value}
                     >
@@ -292,6 +331,10 @@ export const AddExpenseForm = ({
                         placeholder="Additional notes (optional)"
                         {...field}
                         value={field.value ?? ""}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          debouncedTrigger();
+                        }}
                       />
                     </FormControl>
                     <FormMessage />

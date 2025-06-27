@@ -17,6 +17,7 @@ import {
 import { ModeToggler } from "@/components/ui/mode-toggler";
 // import AuthButton from "../buttons/auth-button";
 import { options } from "@/.velite";
+import AuthButton from "../buttons/auth-button";
 
 export default function HamburgerMenu() {
   return (
@@ -49,7 +50,7 @@ export default function HamburgerMenu() {
                   </NavigationMenuItem>
                 ))}
               </NavigationMenuList>
-              {/* <AuthButton /> */}
+              <AuthButton />
               {/* <SheetTrigger className="uppercase mx-auto">
                 <AuthButton />
               </SheetTrigger> */}

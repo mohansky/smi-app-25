@@ -14,9 +14,9 @@ import {
 } from "@/components/ui/dialog";
 import {
   getBatch,
-  getBatchColor,
+  getBatchVariant,
   getGrade,
-  getGradeColor,
+  getGradeVariant,
   getInstrumentIcon,
 } from "@/lib/color-icon-constants";
 import { StudentFormValues } from "@/lib/validations/student";
@@ -34,11 +34,15 @@ import React from "react";
 import { toast } from "sonner";
 
 // Helper function to safely format dates
-const safeFormatDate = (date: Date | string | null | undefined, formatString: string, fallback: string = "Not available") => {
+const safeFormatDate = (
+  date: Date | string | null | undefined,
+  formatString: string,
+  fallback: string = "Not available"
+) => {
   if (!date) return fallback;
-  
+
   try {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    const dateObj = typeof date === "string" ? new Date(date) : date;
     if (isNaN(dateObj.getTime())) {
       return fallback;
     }
@@ -64,11 +68,8 @@ export default function StudentDetails({
                 <p className="text-2xl font-bold"> {student.name}</p>
               </div>
               <Badge
-                className={`capitalize ${
-                  student.isActive
-                    ? "bg-active hover:text-active"
-                    : "bg-destructive hover:text-destructive"
-                }`}
+                className="capitalize"
+                variant={student.isActive ? "success" : "destructive"}
               >
                 {student.isActive ? "Active" : "Inactive"}
               </Badge>
@@ -81,7 +82,7 @@ export default function StudentDetails({
           <Dialog>
             <DialogTrigger asChild>
               <Button
-                variant="outline"
+                variant="accent"
                 size="icon"
                 title={`Edit ${student.name}`}
               >
@@ -117,12 +118,16 @@ export default function StudentDetails({
             </Button>
           </Link>
         </div>
-        <div className="border rounded-lg p-4 space-y-4">
+        <Card className="p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <div className="text-sm text-gray-500">Date of Birth</div>
               <div className="mt-1">
-                {safeFormatDate(student.dateOfBirth, "MMMM d, yyyy", "Not provided")}
+                {safeFormatDate(
+                  student.dateOfBirth,
+                  "MMMM d, yyyy",
+                  "Not provided"
+                )}
               </div>
             </div>
             <div>
@@ -132,9 +137,9 @@ export default function StudentDetails({
               </div>
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="border rounded-lg p-4 space-y-4">
+        <Card className="p-4 space-y-4">
           <h3 className="font-semibold flex items-center gap-2">
             <GraduationCap className="w-5 h-5" />
             Class Details
@@ -149,28 +154,30 @@ export default function StudentDetails({
             </div>
             <div>
               <div className="text-sm text-gray-500">Grade</div>
-              <Badge className={getGradeColor(student.grade)}>
+
+              <Badge variant={getGradeVariant(student.grade)}>
                 {`${getGrade(student.grade)}`}
               </Badge>
             </div>
             <div>
               <div className="text-sm text-gray-500">Batch</div>
-
-              <Badge className={getBatchColor(student.batch)}>
+              <Badge variant={getBatchVariant(student.batch)}>
                 {`${getBatch(student.batch)}`}
               </Badge>
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className=" flex justify-between text-xs text-gray-500 ">
+        <div className=" flex justify-between text-xs font-light text-gray-400 ">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4" />
-            Last updated: <br/>{safeFormatDate(student.updatedAt, "PPpp", "Never updated")}
+            Last updated: <br />
+            {safeFormatDate(student.updatedAt, "PPpp", "Never updated")}
           </div>
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4" />
-            Created: <br/>{safeFormatDate(student.createdAt, "dd MMM yyyy", "Unknown")}
+            Created: <br />
+            {safeFormatDate(student.createdAt, "dd MMM yyyy", "Unknown")}
           </div>
         </div>
       </CardContent>

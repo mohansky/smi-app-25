@@ -67,27 +67,20 @@ export const usersColumns: ColumnDef<UserData>[] = [
     header: "Role",
     cell: ({ row }) => {
       const role = row.getValue("role") as string;
-      // const user = row.original; // Get the full row data
-
       return (
         <div className="flex items-center gap-2">
           <Badge
             variant={
               role === "ADMIN"
-                ? "default"
+                ? "success"
                 : role === "USER"
-                  ? "secondary"
-                  : "outline"
+                  ? "success"
+                  : "destructive"
             }
             className="capitalize"
           >
             {role.toLowerCase()}
           </Badge>
-          {/* <PromoteUserButton 
-            userId={user.id} 
-            userName={user.name} 
-            currentRole={role} 
-          /> */}
         </div>
       );
     },
@@ -170,9 +163,9 @@ export const usersColumns: ColumnDef<UserData>[] = [
                     <Badge
                       variant={
                         user.role === "ADMIN"
-                          ? "default"
+                          ? "success"
                           : user.role === "USER"
-                            ? "secondary"
+                            ? "success"
                             : "destructive"
                       }
                       className="ml-2 capitalize"

@@ -1,7 +1,9 @@
 "use client";
-import { useActionState, useState } from "react";
+// app/components/forms/add-student-form.tsx
+import { useActionState, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { debounce } from "lodash";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -22,7 +24,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { studentSchema } from "@/lib/validations/student";
 import { INSTRUMENTS, GRADES, BATCHES } from "@/db/schema";
-import { useEffect } from "react";
 import { AddStudentFormState } from "@/types";
 import { z } from "zod";
 import { DialogClose, DialogFooter } from "../ui/dialog";
@@ -39,7 +40,6 @@ const getSafeDate = (date: Date | string | null | undefined): Date => {
     return !isNaN(d.getTime()) ? d : new Date();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (_) {
-    // Ignore error and return default date
     return new Date();
   }
 };
@@ -51,11 +51,14 @@ const formatDateForInput = (date: Date | string | null | undefined): string => {
     return d.toISOString().split("T")[0];
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (_) {
-    // Ignore error and return empty string
     return "";
   }
 };
 
+// Define proper types for the enum values
+type InstrumentType = "guitar" | "drums" | "keyboard";
+type GradeType = "grade1" | "grade2" | "grade3";
+type BatchType = "mt" | "tf" | "ws";
 
 export const AddStudentForm = ({
   addStudent,
@@ -77,7 +80,7 @@ export const AddStudentForm = ({
   // Create safe default dates
   const today = new Date();
   const defaultDob = new Date();
-  defaultDob.setFullYear(today.getFullYear() - 10); // Default age of 10 years
+  defaultDob.setFullYear(today.getFullYear() - 8); // Default age of 8 years
 
   const form = useForm<z.infer<typeof studentSchema>>({
     resolver: zodResolver(studentSchema),
@@ -92,7 +95,7 @@ export const AddStudentForm = ({
       joiningDate: today,
       isActive: true,
     },
-    mode: "onChange",
+    mode: "onBlur", // Changed from "onChange" to reduce validation frequency
   });
 
   // Track date values in state to avoid conversion issues
@@ -100,15 +103,17 @@ export const AddStudentForm = ({
     formatDateForInput(defaultDob)
   );
   const [joiningDate, setJoiningDate] = useState(formatDateForInput(today));
+  
+  // Track select values in state for FormData - with proper typing
+  const [instrument, setInstrument] = useState<InstrumentType>(INSTRUMENTS.GUITAR);
+  const [grade, setGrade] = useState<GradeType>(GRADES.GRADE1);
+  const [batch, setBatch] = useState<BatchType>(BATCHES.MT);
 
-  useEffect(() => {
-    const subscription = form.watch((values) => {
-      form.trigger();
-      return values;
-    });
-
-    return () => subscription.unsubscribe();
-  }, [form]);
+  // Debounce form validation to improve performance
+  const debouncedTrigger = useMemo(
+    () => debounce(() => form.trigger(), 300),
+    [form]
+  );
 
   if (state.status === "success") {
     return (
@@ -145,6 +150,14 @@ export const AddStudentForm = ({
         )}
         <Form {...form}>
           <form action={formAction} className="space-y-6">
+            {/* Hidden inputs to ensure FormData includes all values */}
+            <input type="hidden" name="dateOfBirth" value={dateOfBirth} />
+            <input type="hidden" name="joiningDate" value={joiningDate} />
+            <input type="hidden" name="isActive" value="true" />
+            <input type="hidden" name="instrument" value={instrument} />
+            <input type="hidden" name="grade" value={grade} />
+            <input type="hidden" name="batch" value={batch} />
+
             <FormField
               control={form.control}
               name="name"
@@ -152,7 +165,14 @@ export const AddStudentForm = ({
                 <FormItem>
                   <FormLabel>Full Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} />
+                    <Input 
+                      placeholder="John Doe" 
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        debouncedTrigger(); // Debounced validation
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -171,6 +191,10 @@ export const AddStudentForm = ({
                         type="email"
                         placeholder="john@example.com"
                         {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          debouncedTrigger();
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -185,7 +209,14 @@ export const AddStudentForm = ({
                   <FormItem>
                     <FormLabel>Phone Number</FormLabel>
                     <FormControl>
-                      <Input placeholder="1234567890" {...field} />
+                      <Input 
+                        placeholder="1234567890" 
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          debouncedTrigger();
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -194,51 +225,6 @@ export const AddStudentForm = ({
             </div>
 
             <div className="grid grid-cols-2 gap-8">
-              {/* <FormField
-                control={form.control}
-                name="dateOfBirth"
-                render={({ field: { onChange, value, ...field } }) => (
-                  <FormItem>
-                    <FormLabel>Date of Birth</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        {...field}
-                        value={
-                          value instanceof Date
-                            ? value.toISOString().split("T")[0]
-                            : ""
-                        }
-                        onChange={(e) => onChange(new Date(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              /> */}
-
-              {/* <FormField
-                control={form.control}
-                name="joiningDate"
-                render={({ field: { onChange, value, ...field } }) => (
-                  <FormItem>
-                    <FormLabel>Joining Date</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        {...field}
-                        value={
-                          value instanceof Date
-                            ? value.toISOString().split("T")[0]
-                            : ""
-                        }
-                        onChange={(e) => onChange(new Date(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              /> */}
               <FormField
                 control={form.control}
                 name="dateOfBirth"
@@ -295,13 +281,11 @@ export const AddStudentForm = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Select Instrument</FormLabel>
-                    <Input
-                      type="hidden"
-                      name="instrument"
-                      value={field.value}
-                    />
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value: InstrumentType) => {
+                        field.onChange(value);
+                        setInstrument(value);
+                      }}
                       defaultValue={field.value}
                       value={field.value}
                     >
@@ -327,9 +311,11 @@ export const AddStudentForm = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Select Grade</FormLabel>
-                    <Input type="hidden" name="grade" value={field.value} />
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value: GradeType) => {
+                        field.onChange(value);
+                        setGrade(value);
+                      }}
                       defaultValue={field.value}
                       value={field.value}
                     >
@@ -355,9 +341,11 @@ export const AddStudentForm = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Select Batch</FormLabel>
-                    <Input type="hidden" name="batch" value={field.value} />
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value: BatchType) => {
+                        field.onChange(value);
+                        setBatch(value);
+                      }}
                       defaultValue={field.value}
                       value={field.value}
                     >

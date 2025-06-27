@@ -1,5 +1,7 @@
 "use client";
-import { useActionState, useEffect } from "react";
+// app/components/forms/add-payment-form.tsx
+import { useActionState, useState, useMemo } from "react";
+import { debounce } from "lodash";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,6 +28,19 @@ import { PaymentFormState } from "@/types";
 import { DialogClose, DialogFooter } from "../ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 
+// Helper function to format date for input
+const formatDateForInput = (date: Date): string => {
+  try {
+    return date.toISOString().split("T")[0];
+  } catch {
+    return "";
+  }
+};
+
+// Define proper types for the enum values
+type PaymentMethodType = "CASH" | "CARD";
+type PaymentStatusType = "DUE" | "PAID";
+
 export const AddPaymentForm = ({
   studentId,
   createPayment,
@@ -40,17 +55,18 @@ export const AddPaymentForm = ({
     status: "idle",
     data: {
       message: "",
-      user: undefined,
       issues: [],
     },
     studentId,
   });
 
+  const today = new Date();
+
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
       studentId,
-      date: new Date(),
+      date: today,
       amount: 0,
       description: "",
       paymentMethod: "CARD",
@@ -58,17 +74,19 @@ export const AddPaymentForm = ({
       transactionId: "",
       notes: "",
     },
-    mode: "onSubmit",
+    mode: "onBlur", // Changed from "onSubmit" to provide better user feedback
   });
 
-  useEffect(() => {
-    const subscription = form.watch((values) => {
-      form.trigger();
-      return values;
-    });
+  // Track form values in state to ensure they're included in FormData
+  const [date, setDate] = useState(formatDateForInput(today));
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("CARD");
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatusType>("PAID");
 
-    return () => subscription.unsubscribe();
-  }, [form]);
+  // Debounce form validation to improve performance
+  const debouncedTrigger = useMemo(
+    () => debounce(() => form.trigger(), 300),
+    [form]
+  );
 
   if (state.status === "success") {
     return (
@@ -109,7 +127,11 @@ export const AddPaymentForm = ({
         )}
         <Form {...form}>
           <form action={formAction} className="space-y-6">
+            {/* Hidden inputs to ensure FormData includes all values */}
             <input type="hidden" name="studentId" value={studentId} />
+            <input type="hidden" name="date" value={date} />
+            <input type="hidden" name="paymentMethod" value={paymentMethod} />
+            <input type="hidden" name="paymentStatus" value={paymentStatus} />
 
             <FormField
               control={form.control}
@@ -120,24 +142,23 @@ export const AddPaymentForm = ({
                   <FormControl>
                     <Input
                       type="date"
-                      value={
-                        field.value instanceof Date
-                          ? field.value.toISOString().split("T")[0]
-                          : ""
-                      }
+                      value={date}
                       onChange={(e) => {
-                        const date = new Date(e.target.value);
-                        field.onChange(date);
+                        setDate(e.target.value);
+                        if (e.target.value) {
+                          field.onChange(new Date(e.target.value));
+                        }
+                        debouncedTrigger();
                       }}
                       onBlur={field.onBlur}
-                      name={field.name}
-                      ref={field.ref}
+                      name="date"
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
             <div className="grid md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
@@ -151,6 +172,10 @@ export const AddPaymentForm = ({
                         placeholder="Enter amount"
                         step="0.50"
                         {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          debouncedTrigger();
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -165,7 +190,14 @@ export const AddPaymentForm = ({
                   <FormItem className="col-span-2">
                     <FormLabel>Payment description</FormLabel>
                     <FormControl>
-                      <Input placeholder="Payment description" {...field} />
+                      <Input 
+                        placeholder="Payment description" 
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          debouncedTrigger();
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -184,26 +216,30 @@ export const AddPaymentForm = ({
                       <Input
                         placeholder="Enter transaction ID (optional)"
                         {...field}
-                        value={field.value ?? " "}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          debouncedTrigger();
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              
               <FormField
                 control={form.control}
                 name="paymentMethod"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Payment Method</FormLabel>
-                    <Input
-                      type="hidden"
-                      name="paymentMethod"
-                      value={field.value}
-                    />
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value: PaymentMethodType) => {
+                        field.onChange(value);
+                        setPaymentMethod(value);
+                        debouncedTrigger();
+                      }}
                       defaultValue={field.value}
                       value={field.value}
                     >
@@ -221,19 +257,19 @@ export const AddPaymentForm = ({
                   </FormItem>
                 )}
               />
+              
               <FormField
                 control={form.control}
                 name="paymentStatus"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Payment Status</FormLabel>
-                    <Input
-                      type="hidden"
-                      name="paymentStatus"
-                      value={field.value}
-                    />
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value: PaymentStatusType) => {
+                        field.onChange(value);
+                        setPaymentStatus(value);
+                        debouncedTrigger();
+                      }}
                       defaultValue={field.value}
                       value={field.value}
                     >
@@ -264,6 +300,10 @@ export const AddPaymentForm = ({
                       placeholder="Additional notes (optional)"
                       {...field}
                       value={field.value ?? ""}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        debouncedTrigger();
+                      }}
                     />
                   </FormControl>
                   <FormMessage />

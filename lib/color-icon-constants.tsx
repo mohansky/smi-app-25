@@ -27,14 +27,27 @@ export const getBatchColor = (batch: Batch) => {
   }
 };
 
+export const getBatchVariant = (batch: Batch) => {
+  switch (batch as Batch) {
+    case "mt":
+      return "secondary";
+    case "tf":
+      return "success";
+    case "ws":
+      return "destructive";
+    default:
+      return "default";
+  }
+};
+
 export const getBatch = (batch: Batch) => {
   switch (batch as Batch) {
     case "tf":
-      return "Tuesday & Friday";
+      return "Tue & Fri";
     case "ws":
-      return "Wednesday & Saturday";
+      return "Wed & Sat";
     default:
-      return "Monday & Thursday";
+      return "Mon & Thu";
   }
 };
 
@@ -51,6 +64,19 @@ export const getGradeColor = (grade: Grade) => {
   }
 };
 
+export const getGradeVariant = (grade: Grade) => {
+  switch (grade as Grade) {
+    case "grade1":
+      return "secondary";
+    case "grade2":
+      return "success";
+    case "grade3":
+      return "destructive";
+    default:
+      return "default";
+  }
+};
+
 export const getGrade = (grade: Grade) => {
   switch (grade as Grade) {
     case "grade2":
@@ -61,7 +87,6 @@ export const getGrade = (grade: Grade) => {
       return "Grade 1";
   }
 };
-
 
 // Color palette for the chart
 export const chartColors = [

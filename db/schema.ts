@@ -52,7 +52,8 @@ export const users = sqliteTable("users", {
 
 // Student records
 export const students = sqliteTable("students", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+  // id: integer("id").primaryKey({ autoIncrement: true }),
+  id: integer("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").unique().notNull(),
   userId: text("user_id").references(() => users.id, { onDelete: "set null" }),

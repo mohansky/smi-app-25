@@ -1,11 +1,11 @@
 "use client";
+// app/components/columns/students-columns.tsx
 import { ColumnDef } from "@tanstack/react-table";
 import { CaretSortIcon } from "@radix-ui/react-icons";
 import { Button } from "../ui/button";
 import { StudentFormValues } from "@/lib/validations/student";
 import DateFormatter from "../custom-ui/date-format";
 import Link from "next/link";
-// import { EyeIcon } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { DeleteButton } from "../buttons/delete-button";
 import { deleteStudent } from "@/app/actions/student";
@@ -32,16 +32,13 @@ export const studentsColumns: ColumnDef<StudentFormValues>[] = [
     accessorKey: "name",
     header: ({ column }) => {
       return (
-        <div className="sticky left-0 z-10">
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            // className="sticky left-0 z-10"
-          >
-            Name
-            <CaretSortIcon className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Name
+          <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
       );
     },
     cell: ({ row }) => (
@@ -109,11 +106,8 @@ export const studentsColumns: ColumnDef<StudentFormValues>[] = [
     header: "Active",
     cell: ({ row }) => (
       <Badge
-        className={`capitalize ${
-          row.getValue("isActive")
-            ? "bg-active hover:text-active"
-            : "bg-destructive hover:text-destructive"
-        }`}
+        className="capitalize"
+        variant={row.getValue("isActive") ? "success" : "destructive"}
       >
         {row.getValue("isActive") ? "Active" : "Inactive"}
       </Badge>

@@ -1,10 +1,16 @@
 "use server";
 // app/app/actions/chartData.ts
 import { db } from "@/db/drizzle";
-import { payments, expenses, students, INSTRUMENTS } from "@/db/schema";
+import { attendance, payments, expenses, students, INSTRUMENTS } from "@/db/schema";
 import { CombinedStats } from "@/types";
-import { endOfMonth, startOfMonth, subYears } from "date-fns";
-import { sql } from "drizzle-orm";
+import { format, subDays, isSunday, endOfMonth, startOfMonth, subYears } from "date-fns";
+// import { sql } from "drizzle-orm";
+
+
+// import { format, subDays, isSunday, startOfMonth, endOfMonth } from 'date-fns';
+// import { db } from '@/lib/db'; // Adjust import path to your database connection
+// import { attendance, students } from '@/lib/db/schema'; // Adjust import path to your schema
+import { eq, and, gte, lte, sql, count } from 'drizzle-orm';
 
 interface MonthlyDataProps {
   month: string;
@@ -180,5 +186,231 @@ export async function getCombinedStats(month: string): Promise<CombinedStats> {
       },
       hasData: false,
     };
+  }
+}
+
+
+
+
+
+
+export async function getDailyAttendance(month?: string) {
+  try {
+    // If month is provided, get data for that month, otherwise last 14 days
+    let startDate: Date;
+    let endDate: Date;
+
+    if (month) {
+      const monthDate = new Date(month);
+      startDate = startOfMonth(monthDate);
+      endDate = endOfMonth(monthDate);
+    } else {
+      endDate = new Date();
+      startDate = subDays(endDate, 13); // Last 14 days
+    }
+
+    const startDateStr = format(startDate, 'yyyy-MM-dd');
+    const endDateStr = format(endDate, 'yyyy-MM-dd');
+
+    // Query attendance records grouped by date
+    // Only count "present" status records
+    const attendanceRecords = await db
+      .select({
+        date: attendance.date,
+        attendance: count(attendance.id)
+      })
+      .from(attendance)
+      .where(
+        and(
+          gte(attendance.date, startDateStr),
+          lte(attendance.date, endDateStr),
+          eq(attendance.status, 'present') // Only count present students
+        )
+      )
+      .groupBy(attendance.date)
+      .orderBy(attendance.date);
+
+    // Create a map of dates to attendance counts
+    const attendanceMap = new Map(
+      attendanceRecords.map(record => [record.date, record.attendance])
+    );
+
+    // Generate complete data for the date range, excluding Sundays
+    const attendanceData = [];
+    const currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+      // Skip Sundays
+      if (!isSunday(currentDate)) {
+        const dateStr = format(currentDate, 'yyyy-MM-dd');
+        attendanceData.push({
+          date: dateStr,
+          attendance: attendanceMap.get(dateStr) || 0,
+          day: format(currentDate, 'EEE'),
+        });
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return attendanceData;
+  } catch (error) {
+    console.error('Failed to fetch attendance data:', error);
+    return [];
+  }
+}
+
+// Get weekly attendance summary
+export async function getWeeklyAttendanceSummary(month?: string) {
+  try {
+    let startDate: Date;
+    let endDate: Date;
+
+    if (month) {
+      const monthDate = new Date(month);
+      startDate = startOfMonth(monthDate);
+      endDate = endOfMonth(monthDate);
+    } else {
+      endDate = new Date();
+      startDate = subDays(endDate, 27); // Last 4 weeks
+    }
+
+    const startDateStr = format(startDate, 'yyyy-MM-dd');
+    const endDateStr = format(endDate, 'yyyy-MM-dd');
+
+    // Get weekly attendance data
+    const weeklyRecords = await db
+      .select({
+        date: attendance.date,
+        attendance: count(attendance.id)
+      })
+      .from(attendance)
+      .where(
+        and(
+          gte(attendance.date, startDateStr),
+          lte(attendance.date, endDateStr),
+          eq(attendance.status, 'present')
+        )
+      )
+      .groupBy(attendance.date)
+      .orderBy(attendance.date);
+
+    // Group by weeks and calculate totals
+    const weeklyData = [];
+    let currentWeek = 1;
+    let weekTotal = 0;
+    let dayCount = 0;
+
+    for (const record of weeklyRecords) {
+      const recordDate = new Date(record.date);
+      if (!isSunday(recordDate)) {
+        weekTotal += record.attendance;
+        dayCount++;
+
+        // If we've collected 6 days (Mon-Sat), finalize the week
+        if (dayCount === 6) {
+          weeklyData.push({
+            week: `Week ${currentWeek}`,
+            totalAttendance: weekTotal,
+            averageDaily: Math.round((weekTotal / dayCount) * 10) / 10
+          });
+          currentWeek++;
+          weekTotal = 0;
+          dayCount = 0;
+        }
+      }
+    }
+
+    // Add any remaining partial week
+    if (dayCount > 0) {
+      weeklyData.push({
+        week: `Week ${currentWeek}`,
+        totalAttendance: weekTotal,
+        averageDaily: Math.round((weekTotal / dayCount) * 10) / 10
+      });
+    }
+
+    return weeklyData;
+  } catch (error) {
+    console.error('Failed to fetch weekly attendance:', error);
+    return [];
+  }
+}
+
+// Get attendance statistics
+export async function getAttendanceStats(month?: string) {
+  try {
+    const attendanceData = await getDailyAttendance(month);
+    
+    if (attendanceData.length === 0) {
+      return {
+        totalDays: 0,
+        averageAttendance: 0,
+        highestAttendance: 0,
+        lowestAttendance: 0,
+        totalStudentsPresent: 0,
+      };
+    }
+
+    const attendanceNumbers = attendanceData.map(d => d.attendance);
+    const total = attendanceNumbers.reduce((sum, num) => sum + num, 0);
+
+    return {
+      totalDays: attendanceData.length,
+      averageAttendance: Math.round(total / attendanceData.length),
+      highestAttendance: Math.max(...attendanceNumbers),
+      lowestAttendance: Math.min(...attendanceNumbers),
+      totalStudentsPresent: total,
+    };
+  } catch (error) {
+    console.error('Failed to calculate attendance stats:', error);
+    return {
+      totalDays: 0,
+      averageAttendance: 0,
+      highestAttendance: 0,
+      lowestAttendance: 0,
+      totalStudentsPresent: 0,
+    };
+  }
+}
+
+// Get total active students for attendance percentage calculation
+export async function getActiveStudentsCount() {
+  try {
+    const result = await db
+      .select({ count: count(students.id) })
+      .from(students)
+      // .where(eq(students.status, 'active')); // Assuming you have a status field
+
+    return result[0]?.count || 0;
+  } catch (error) {
+    console.error('Failed to get active students count:', error);
+    return 0;
+  }
+}
+
+// Get attendance percentage for a specific date
+export async function getAttendancePercentage(date: string) {
+  try {
+    const [presentCount, totalActive] = await Promise.all([
+      db
+        .select({ count: count(attendance.id) })
+        .from(attendance)
+        .where(
+          and(
+            eq(attendance.date, date),
+            eq(attendance.status, 'present')
+          )
+        ),
+      getActiveStudentsCount()
+    ]);
+
+    const present = presentCount[0]?.count || 0;
+    
+    if (totalActive === 0) return 0;
+    
+    return Math.round((present / totalActive) * 100);
+  } catch (error) {
+    console.error('Failed to calculate attendance percentage:', error);
+    return 0;
   }
 }

@@ -46,7 +46,7 @@ export const paymentColumns: ColumnDef<PaymentFormValues>[] = [
       const formatted = new Intl.NumberFormat("en-IN", {
         style: "currency",
         currency: "INR",
-        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
       }).format(total);
 
       return (
@@ -137,8 +137,8 @@ export const paymentColumns: ColumnDef<PaymentFormValues>[] = [
                         paymentStatus === "PAID"
                           ? "text-active"
                           : paymentStatus === "DUE"
-                          ? "text-yellow-600"
-                          : "text-destructive"
+                            ? "text-yellow-600"
+                            : "text-destructive"
                       }`}
                     >
                       {paymentStatus}
@@ -149,9 +149,10 @@ export const paymentColumns: ColumnDef<PaymentFormValues>[] = [
                     <BadgeIndianRupee className="mr-2 h-5 w-5 text-muted-foreground" />
                     <span className="font-medium">Amount:</span>
                     <span className="ml-2 font-bold">
-                      {new Intl.NumberFormat("en-US", {
+                      {new Intl.NumberFormat("en-IN", {
                         style: "currency",
-                        currency: "USD",
+                        currency: "INR",
+                        maximumFractionDigits: 0,
                       }).format(amount)}
                     </span>
                   </div>

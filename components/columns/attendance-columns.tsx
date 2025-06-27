@@ -16,10 +16,6 @@ export const attendanceColumns: ColumnDef<AttendanceFormValues>[] = [
   //   ),
   // },
   {
-    accessorKey: "studentName",
-    header: "Student Name",
-  },
-  {
     accessorKey: "date",
     header: ({ column }) => {
       return (
@@ -33,6 +29,10 @@ export const attendanceColumns: ColumnDef<AttendanceFormValues>[] = [
       );
     },
     cell: ({ row }) => <DateFormatter dateString={row.getValue("date")} />,
+  },
+  {
+    accessorKey: "studentName",
+    header: "Student Name",
   },
   {
     accessorKey: "status",

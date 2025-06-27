@@ -12,8 +12,8 @@ const buttonVariants = cva(
         default:
           "bg-primary text-primary-foreground shadow hover:bg-primary/90",
         accent: "bg-accent text-accent-foreground shadow hover:opacity-80",
-        green: "bg-green-600 text-accent-foreground shadow hover:opacity-80",
-        blue: "bg-sky-600 text-accent-foreground shadow hover:opacity-80",
+        green: "bg-green-600 text-primary-foreground shadow hover:opacity-80",
+        blue: "bg-sky-600 text-primary-foreground shadow hover:opacity-80",
         destructive:
           "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:

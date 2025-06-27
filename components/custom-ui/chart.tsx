@@ -109,15 +109,15 @@ export function PaymentsChart({ chartData }: { chartData: ChartDataProps[] }) {
       </CardContent>
       <CardFooter>
         <div className="flex w-full justify-between items-center gap-2 text-sm">
-          <div className="flex items-center gap-2 leading-none text-active">
+          <div className="flex items-center gap-2 leading-none text-blue-600">
             Total Payments: ₹{totalPayments.toLocaleString()}
           </div>
-          <div className="flex items-center gap-2 leading-none text-destructive-foreground">
+          <div className="flex items-center gap-2 leading-none text-destructive">
             Total Expenses: ₹{totalExpenses.toLocaleString()}
           </div>
           <div
             className={`flex items-center gap-2 leading-none ${
-              difference >= 0 ? "text-active" : "text-destructive-foreground"
+              difference >= 0 ? "text-blue-600" : "text-red-600"
             }`}
           >
             Net: ₹{Math.abs(difference).toLocaleString()}

@@ -1,4 +1,5 @@
 "use client";
+// app/components/forms/update-student-form.tsx
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -23,11 +24,28 @@ import {
   studentSchema,
   type StudentFormValues,
 } from "@/lib/validations/student";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState, useMemo } from "react";
+import { debounce } from "lodash";
 import { Switch } from "../ui/switch";
 import { UpdateStudentFormState } from "@/types";
 import { z } from "zod";
 import { DialogClose, DialogFooter } from "../ui/dialog";
+
+// Helper function to format date for input
+const formatDateForInput = (date: Date | string | null | undefined): string => {
+  try {
+    if (!date) return "";
+    const d = date instanceof Date ? date : new Date(date);
+    return !isNaN(d.getTime()) ? d.toISOString().split("T")[0] : "";
+  } catch {
+    return "";
+  }
+};
+
+// Define proper types for the enum values
+type InstrumentType = "guitar" | "drums" | "keyboard";
+type GradeType = "grade1" | "grade2" | "grade3";
+type BatchType = "mt" | "tf" | "ws";
 
 export const UpdateStudentForm = ({
   studentId,
@@ -47,7 +65,6 @@ export const UpdateStudentForm = ({
     status: "idle",
     data: {
       message: "",
-      user: undefined,
       issues: [],
     },
     studentId,
@@ -57,29 +74,52 @@ export const UpdateStudentForm = ({
   const form = useForm<z.infer<typeof studentSchema>>({
     resolver: zodResolver(studentSchema),
     defaultValues: initialValues,
-    mode: "onChange",
+    mode: "onBlur", // Changed from "onChange" to reduce validation frequency
   });
+
+  // Track form values in state to ensure they're included in FormData
+  const [dateOfBirth, setDateOfBirth] = useState(
+    formatDateForInput(initialValues.dateOfBirth)
+  );
+  const [joiningDate, setJoiningDate] = useState(
+    formatDateForInput(initialValues.joiningDate)
+  );
+  const [instrument, setInstrument] = useState<InstrumentType>(
+    initialValues.instrument || "guitar"
+  );
+  const [grade, setGrade] = useState<GradeType>(
+    initialValues.grade || "grade1"
+  );
+  const [batch, setBatch] = useState<BatchType>(
+    initialValues.batch || "mt"
+  );
+  const [isActive, setIsActive] = useState(initialValues.isActive ?? true);
+
+  // Debounce form validation to improve performance
+  const debouncedTrigger = useMemo(
+    () => debounce(() => form.trigger(), 300),
+    [form]
+  );
 
   useEffect(() => {
     if (state.status === "success" && !state.data?.issues) {
       onSuccess();
     }
-  }, [state, form, onSuccess]);
-
-  useEffect(() => {
-    const subscription = form.watch((values) => {
-      form.trigger();
-      return values;
-    });
-
-    return () => subscription.unsubscribe();
-  }, [form]);
+  }, [state, onSuccess]);
 
   return (
     <CardContent>
       <Form {...form}>
         <form className="space-y-6" action={formAction}>
+          {/* Hidden inputs to ensure FormData includes all values */}
           <input type="hidden" name="id" value={studentId} />
+          <input type="hidden" name="dateOfBirth" value={dateOfBirth} />
+          <input type="hidden" name="joiningDate" value={joiningDate} />
+          <input type="hidden" name="instrument" value={instrument} />
+          <input type="hidden" name="grade" value={grade} />
+          <input type="hidden" name="batch" value={batch} />
+          <input type="hidden" name="isActive" value={isActive ? "true" : "false"} />
+
           <div className="grid md:grid-cols-4 gap-8">
             <FormField
               control={form.control}
@@ -88,12 +128,20 @@ export const UpdateStudentForm = ({
                 <FormItem className="md:col-span-3">
                   <FormLabel>Full Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} />
+                    <Input 
+                      placeholder="John Doe" 
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        debouncedTrigger();
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="isActive"
@@ -107,14 +155,11 @@ export const UpdateStudentForm = ({
                       checked={field.value}
                       onCheckedChange={(checked) => {
                         field.onChange(checked);
+                        setIsActive(checked);
+                        debouncedTrigger();
                       }}
                     />
                   </FormControl>
-                  <input
-                    type="hidden"
-                    name="isActive"
-                    value={field.value ? "true" : "false"}
-                  />
                 </FormItem>
               )}
             />
@@ -132,6 +177,10 @@ export const UpdateStudentForm = ({
                       type="email"
                       placeholder="john@example.com"
                       {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        debouncedTrigger();
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -146,7 +195,14 @@ export const UpdateStudentForm = ({
                 <FormItem>
                   <FormLabel>Phone Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="+1234567890" {...field} />
+                    <Input 
+                      placeholder="+1234567890" 
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        debouncedTrigger();
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -164,18 +220,16 @@ export const UpdateStudentForm = ({
                   <FormControl>
                     <Input
                       type="date"
-                      value={
-                        field.value instanceof Date
-                          ? field.value.toISOString().split("T")[0]
-                          : ""
-                      }
+                      value={dateOfBirth}
                       onChange={(e) => {
-                        const date = new Date(e.target.value);
-                        field.onChange(date);
+                        setDateOfBirth(e.target.value);
+                        if (e.target.value) {
+                          field.onChange(new Date(e.target.value));
+                        }
+                        debouncedTrigger();
                       }}
                       onBlur={field.onBlur}
-                      name={field.name}
-                      ref={field.ref}
+                      name="dateOfBirth"
                     />
                   </FormControl>
                   <FormMessage />
@@ -192,18 +246,16 @@ export const UpdateStudentForm = ({
                   <FormControl>
                     <Input
                       type="date"
-                      value={
-                        field.value instanceof Date
-                          ? field.value.toISOString().split("T")[0]
-                          : ""
-                      }
+                      value={joiningDate}
                       onChange={(e) => {
-                        const date = new Date(e.target.value);
-                        field.onChange(date);
+                        setJoiningDate(e.target.value);
+                        if (e.target.value) {
+                          field.onChange(new Date(e.target.value));
+                        }
+                        debouncedTrigger();
                       }}
                       onBlur={field.onBlur}
-                      name={field.name}
-                      ref={field.ref}
+                      name="joiningDate"
                     />
                   </FormControl>
                   <FormMessage />
@@ -219,9 +271,12 @@ export const UpdateStudentForm = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Select Instrument</FormLabel>
-                  <Input type="hidden" name="instrument" value={field.value} />
                   <Select
-                    onValueChange={field.onChange}
+                    onValueChange={(value: InstrumentType) => {
+                      field.onChange(value);
+                      setInstrument(value);
+                      debouncedTrigger();
+                    }}
                     defaultValue={field.value}
                     value={field.value}
                   >
@@ -247,9 +302,12 @@ export const UpdateStudentForm = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Select Grade</FormLabel>
-                  <Input type="hidden" name="grade" value={field.value} />
                   <Select
-                    onValueChange={field.onChange}
+                    onValueChange={(value: GradeType) => {
+                      field.onChange(value);
+                      setGrade(value);
+                      debouncedTrigger();
+                    }}
                     defaultValue={field.value}
                     value={field.value}
                   >
@@ -275,9 +333,12 @@ export const UpdateStudentForm = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Select Batch</FormLabel>
-                  <Input type="hidden" name="batch" value={field.value} />
                   <Select
-                    onValueChange={field.onChange}
+                    onValueChange={(value: BatchType) => {
+                      field.onChange(value);
+                      setBatch(value);
+                      debouncedTrigger();
+                    }}
                     defaultValue={field.value}
                     value={field.value}
                   >
