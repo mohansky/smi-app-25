@@ -18,6 +18,7 @@ import {
   getGrade,
   getGradeVariant,
   getInstrumentIcon,
+  getTiming,
 } from "@/lib/color-icon-constants";
 import { StudentFormValues } from "@/lib/validations/student";
 import { format } from "date-fns";
@@ -144,7 +145,7 @@ export default function StudentDetails({
             <GraduationCap className="w-5 h-5" />
             Class Details
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <div className="text-sm text-gray-500">Instrument</div>
               <div className="flex items-center space-x-2 mt-1">
@@ -164,6 +165,10 @@ export default function StudentDetails({
               <Badge variant={getBatchVariant(student.batch)}>
                 {`${getBatch(student.batch)}`}
               </Badge>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500">Timings</div>
+              <Badge variant="outline">{`${getTiming(student.timing)}`}</Badge>
             </div>
           </div>
         </Card>

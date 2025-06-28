@@ -26,7 +26,6 @@ const dateWithFallback = z
   ])
   .default(new Date());
 
-
 export const studentSchema = z.object({
   id: z.number().int().positive().optional(),
   name: z.string().min(2, {
@@ -40,7 +39,23 @@ export const studentSchema = z.object({
   }),
   instrument: z.enum(["guitar", "drums", "keyboard"]).default("guitar"),
   grade: z.enum(["grade1", "grade2", "grade3"]).default("grade1"),
-  batch: z.enum(["mt", "tf", "ws"]).default("mt"),
+  batch: z.enum(["mt", "tf", "ws", "cc"]).default("mt"),
+  timing: z.enum(
+    [
+      "10am-11am",
+      "11am-12pm",
+      "12pm-1pm",
+      "3pm-4pm",
+      "4pm-5pm",
+      "5pm-6pm",
+      "6pm-7pm",
+      "7pm-8pm",
+      "8pm-9pm",
+    ],
+    {
+      message: "Please select a valid timing slot.",
+    }
+  ),
   dateOfBirth: dateOrNull,
   joiningDate: dateWithFallback,
   updatedAt: z
@@ -70,7 +85,9 @@ export const studentSchema = z.object({
 export const studentFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Please enter a valid email address."),
-  phone: z.string().regex(/^\d{10,}$/, "Phone number must contain at least 10 digits."),
+  phone: z
+    .string()
+    .regex(/^\d{10,}$/, "Phone number must contain at least 10 digits."),
   instrument: z.enum(["guitar", "drums", "keyboard"]).default("guitar"),
   grade: z.enum(["grade1", "grade2", "grade3"]).default("grade1"),
   batch: z.enum(["mt", "tf", "ws"]).default("mt"),

@@ -21,13 +21,29 @@ export const BATCHES = {
   MT: "mt",
   TF: "tf",
   WS: "ws",
+  CC: "cc",
 } as const;
 
 export type Batch = (typeof BATCHES)[keyof typeof BATCHES];
 
+// Define timing options
+export const TIMINGS = {
+  "10AM_11AM": "10am-11am",
+  "11AM_12PM": "11am-12pm",
+  "12PM_1PM": "12pm-1pm",
+  "3PM_4PM": "3pm-4pm",
+  "4PM_5PM": "4pm-5pm",
+  "5PM_6PM": "5pm-6pm",
+  "6PM_7PM": "6pm-7pm",
+  "7PM_8PM": "7pm-8pm",
+  "8PM_9PM": "8pm-9pm",
+} as const;
+
+export type Timing = (typeof TIMINGS)[keyof typeof TIMINGS];
+
 export const PAYMENT_METHODS = {
   CASH: "cash",
-  UPI: "upi",
+  CARD: "card",
 } as const;
 
 export const PAYMENT_STATUS = {
@@ -52,7 +68,6 @@ export const users = sqliteTable("users", {
 
 // Student records
 export const students = sqliteTable("students", {
-  // id: integer("id").primaryKey({ autoIncrement: true }),
   id: integer("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").unique().notNull(),
@@ -63,8 +78,9 @@ export const students = sqliteTable("students", {
     .default(INSTRUMENTS.GUITAR),
   grade: text("grade").$type<Grade>().notNull(),
   batch: text("batch").$type<Batch>().notNull(),
-  dateOfBirth: text("date_of_birth"), // Store as "YYYY-MM-DD"
-  joiningDate: text("joining_date").notNull(), // Store as "YYYY-MM-DD"
+  timing: text("timing").$type<Timing>().notNull(),
+  dateOfBirth: text("date_of_birth"),
+  joiningDate: text("joining_date").notNull(),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: integer("created_at", { mode: "timestamp" })
     .$defaultFn(() => new Date())
@@ -80,7 +96,7 @@ export const attendance = sqliteTable("attendance", {
   studentId: integer("student_id")
     .references(() => students.id, { onDelete: "cascade" })
     .notNull(),
-  date: text("date").notNull(), // Store as "YYYY-MM-DD"
+  date: text("date").notNull(),
   status: text("status").notNull(),
   notes: text("notes"),
 });
@@ -91,11 +107,11 @@ export const payments = sqliteTable("payments", {
   studentId: integer("student_id")
     .references(() => students.id, { onDelete: "cascade" })
     .notNull(),
-  date: integer("date", { mode: "timestamp" }).notNull(), // Full timestamp for payments
-  amount: real("amount").notNull(), // SQLite uses REAL for decimals
+  date: integer("date", { mode: "timestamp" }).notNull(),
+  amount: real("amount").notNull(),
   description: text("description").notNull(),
-  paymentMethod: text("payment_method").notNull(), // "CASH" or "CARD"
-  paymentStatus: text("payment_status").notNull(), // "DUE" or "PAID"
+  paymentMethod: text("payment_method").notNull(),
+  paymentStatus: text("payment_status").notNull(),
   transactionId: text("transaction_id"),
   notes: text("notes"),
   created_at: integer("created_at", { mode: "timestamp" })
@@ -111,12 +127,12 @@ export type InsertPayment = typeof payments.$inferInsert;
 // Expense records
 export const expenses = sqliteTable("expenses", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  date: integer("date", { mode: "timestamp" }).notNull(), // Full timestamp for expenses
-  amount: real("amount").notNull(), // SQLite uses REAL for decimals
+  date: integer("date", { mode: "timestamp" }).notNull(),
+  amount: real("amount").notNull(),
   description: text("description").notNull(),
-  category: text("category").default("MISC").notNull(), // "UTILITIES", "RENT", "MISC"
-  expenseStatus: text("expense_status").default("PAID").notNull(), // "DUE" or "PAID"
-  paymentMethod: text("payment_method").default("CASH").notNull(), // "CASH" or "CARD"
+  category: text("category").default("MISC").notNull(),
+  expenseStatus: text("expense_status").default("PAID").notNull(),
+  paymentMethod: text("payment_method").default("CASH").notNull(),
   transactionId: text("transaction_id"),
   notes: text("notes"),
   created_at: integer("created_at", { mode: "timestamp" })
@@ -158,10 +174,10 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
 }));
 
 export const verificationTokens = sqliteTable("verification_tokens", {
-  id: text("id").primaryKey(), // UUID as text (you'll need to generate this manually)
+  id: text("id").primaryKey(),
   email: text("email").notNull(),
   token: text("token").notNull().unique(),
-  expires: integer("expires", { mode: "timestamp" }).notNull(), // SQLite timestamp
+  expires: integer("expires", { mode: "timestamp" }).notNull(),
   createdAt: integer("created_at", { mode: "timestamp" })
     .$defaultFn(() => new Date())
     .notNull(),

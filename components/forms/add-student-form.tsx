@@ -58,7 +58,8 @@ const formatDateForInput = (date: Date | string | null | undefined): string => {
 // Define proper types for the enum values
 type InstrumentType = "guitar" | "drums" | "keyboard";
 type GradeType = "grade1" | "grade2" | "grade3";
-type BatchType = "mt" | "tf" | "ws";
+type BatchType = "mt" | "tf" | "ws" | "cc";
+type TimingType = "10am-11am" | "11am-12pm" | "12pm-1pm" | "3pm-4pm" | "4pm-5pm" | "5pm-6pm" | "6pm-7pm" | "7pm-8pm" | "8pm-9pm";
 
 export const AddStudentForm = ({
   addStudent,
@@ -91,6 +92,7 @@ export const AddStudentForm = ({
       instrument: INSTRUMENTS.GUITAR,
       grade: GRADES.GRADE1,
       batch: BATCHES.MT,
+      timing: "10am-11am" as TimingType,
       dateOfBirth: defaultDob,
       joiningDate: today,
       isActive: true,
@@ -108,6 +110,7 @@ export const AddStudentForm = ({
   const [instrument, setInstrument] = useState<InstrumentType>(INSTRUMENTS.GUITAR);
   const [grade, setGrade] = useState<GradeType>(GRADES.GRADE1);
   const [batch, setBatch] = useState<BatchType>(BATCHES.MT);
+  const [timing, setTiming] = useState<TimingType>("10am-11am");
 
   // Debounce form validation to improve performance
   const debouncedTrigger = useMemo(
@@ -157,6 +160,7 @@ export const AddStudentForm = ({
             <input type="hidden" name="instrument" value={instrument} />
             <input type="hidden" name="grade" value={grade} />
             <input type="hidden" name="batch" value={batch} />
+            <input type="hidden" name="timing" value={timing} />
 
             <FormField
               control={form.control}
@@ -274,7 +278,7 @@ export const AddStudentForm = ({
               />
             </div>
 
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-4 gap-4">
               <FormField
                 control={form.control}
                 name="instrument"
@@ -358,6 +362,43 @@ export const AddStudentForm = ({
                         <SelectItem value="mt">Mon, Thur</SelectItem>
                         <SelectItem value="tf">Tue, Fri</SelectItem>
                         <SelectItem value="ws">Wed, Sat</SelectItem>
+                        <SelectItem value="cc">CC: Mon - Fri</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="timing"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Select Timing</FormLabel>
+                    <Select
+                      onValueChange={(value: TimingType) => {
+                        field.onChange(value);
+                        setTiming(value);
+                      }}
+                      defaultValue={field.value}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select timing" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="10am-11am">10:00 AM - 11:00 AM</SelectItem>
+                        <SelectItem value="11am-12pm">11:00 AM - 12:00 PM</SelectItem>
+                        <SelectItem value="12pm-1pm">12:00 PM - 1:00 PM</SelectItem>
+                        <SelectItem value="3pm-4pm">3:00 PM - 4:00 PM</SelectItem>
+                        <SelectItem value="4pm-5pm">4:00 PM - 5:00 PM</SelectItem>
+                        <SelectItem value="5pm-6pm">5:00 PM - 6:00 PM</SelectItem>
+                        <SelectItem value="6pm-7pm">6:00 PM - 7:00 PM</SelectItem>
+                        <SelectItem value="7pm-8pm">7:00 PM - 8:00 PM</SelectItem>
+                        <SelectItem value="8pm-9pm">8:00 PM - 9:00 PM</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

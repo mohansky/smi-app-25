@@ -9,6 +9,15 @@ import Link from "next/link";
 import { Badge } from "../ui/badge";
 import { DeleteButton } from "../buttons/delete-button";
 import { deleteStudent } from "@/app/actions/student";
+import { CardContent } from "../ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
+import StudentDetails from "../custom-ui/stutent-details";
 
 export const studentsColumns: ColumnDef<StudentFormValues>[] = [
   {
@@ -41,16 +50,30 @@ export const studentsColumns: ColumnDef<StudentFormValues>[] = [
         </Button>
       );
     },
-    cell: ({ row }) => (
-      <Link
-        className="capitalize"
-        href={`/dashboard/admin/students/${row.getValue("id")}`}
-      >
-        <Button variant="link" className="p-0">
-          {row.getValue("name")}
-        </Button>
-      </Link>
-    ),
+    id: "name",
+    cell: ({ row }) => {
+      const student = row.original;
+      return (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="link" className="p-0">
+              {row.getValue("name")}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold">
+                Student Details
+              </DialogTitle>
+            </DialogHeader>
+
+            <CardContent>
+              <StudentDetails student={student} />
+            </CardContent>
+          </DialogContent>
+        </Dialog>
+      );
+    },
   },
   {
     accessorKey: "email",
