@@ -9,7 +9,7 @@ import Link from "next/link";
 import { Badge } from "../ui/badge";
 import { DeleteButton } from "../buttons/delete-button";
 import { deleteStudent } from "@/app/actions/student";
-import { CardContent } from "../ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import {
   Dialog,
   DialogContent,
@@ -60,16 +60,22 @@ export const studentsColumns: ColumnDef<StudentFormValues>[] = [
               {row.getValue("name")}
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold">
+          <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="sticky top-0 bg-background z-10">
+              <DialogTitle className="sr-only">
                 Student Details
               </DialogTitle>
             </DialogHeader>
-
-            <CardContent>
-              <StudentDetails student={student} />
-            </CardContent>
+            <Card className="shadow-none">
+              {/* <CardHeader>
+                <CardTitle className="text-lg flex items-center">
+                  {student.name}
+                </CardTitle>
+              </CardHeader> */}
+              <CardContent>
+                <StudentDetails student={student} />
+              </CardContent>
+            </Card>
           </DialogContent>
         </Dialog>
       );
