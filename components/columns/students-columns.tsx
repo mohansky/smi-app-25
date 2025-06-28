@@ -9,7 +9,7 @@ import Link from "next/link";
 import { Badge } from "../ui/badge";
 import { DeleteButton } from "../buttons/delete-button";
 import { deleteStudent } from "@/app/actions/student";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Card, CardContent } from "../ui/card";
 import {
   Dialog,
   DialogContent,
