@@ -7,7 +7,8 @@ import { ActionState, AttendanceFormState } from "@/types";
 import {
   AttendanceFormValues,
   attendanceSchema,
-} from "@/lib/validations/attendance";
+} from "@/lib/validations/attendance";  
+
 
 export async function submitAttendanceAction(
   prevState: AttendanceFormState,
@@ -18,6 +19,7 @@ export async function submitAttendanceAction(
     const rawAttendanceFormData = {
       studentId: studentId,
       date: formData.get("date"),
+      time: formData.get("time"), // Add time field
       status: formData.get("status"),
       notes: formData.get("notes"),
       studentName: formData.get("studentName") || "Unknown",
@@ -37,6 +39,10 @@ export async function submitAttendanceAction(
       };
     }
 
+    // Handle time - provide default if not specified
+    const timeValue = parsedData.data.time || "00:00";
+    
+    // Check for existing record on the same date (regardless of time)
     const existingRecord = await db
       .select()
       .from(attendance)
@@ -64,13 +70,13 @@ export async function submitAttendanceAction(
     const insertData: InferInsertModel<typeof attendance> = {
       studentId: parsedData.data.studentId,
       date: parsedData.data.date.toISOString().split("T")[0],
+      time: timeValue, // Store time separately, can be null for existing records
       status: parsedData.data.status,
       notes: parsedData.data.notes,
     };
 
     await db.insert(attendance).values(insertData);
 
- 
     revalidatePath("/dashboard/admin/attendance"); 
     revalidatePath("/dashboard/admin");
     revalidatePath("/dashboard");
@@ -81,7 +87,7 @@ export async function submitAttendanceAction(
       data: {
         message: `Attendance record added successfully for ${
           parsedData.data.date.toISOString().split("T")[0]
-        }`,
+        }${timeValue ? ` at ${timeValue}` : ''}`,
       },
     };
   } catch (error) {
@@ -96,6 +102,7 @@ export async function submitAttendanceAction(
     };
   }
 }
+ 
 
 export async function getAttendanceRecords(): Promise<{
   attendance?: AttendanceFormValues[];
@@ -109,6 +116,7 @@ export async function getAttendanceRecords(): Promise<{
         studentId: attendance.studentId,
         studentName: students.name,
         date: attendance.date,
+        time: attendance.time,
         status: attendance.status,
         notes: attendance.notes,
       })
@@ -139,6 +147,7 @@ export async function getAttendanceRecordsByStudent(studentId: number) {
       .select({
         id: attendance.id,
         date: attendance.date,
+        time: attendance.time,
         status: attendance.status,
         notes: attendance.notes,
         studentId: attendance.studentId,
@@ -205,6 +214,7 @@ export async function getAttendanceRecordsByStudentId(studentId: number) {
       id: attendance.id,
       studentId: attendance.studentId,
       studentName: students.name,
+      time: attendance.time,
       date: attendance.date,
       status: attendance.status,
       notes: attendance.notes,
@@ -228,6 +238,7 @@ export async function getAttendanceRecordsByDateRange(
       studentId: attendance.studentId,
       studentName: students.name,
       date: attendance.date,
+      time: attendance.time,
       status: attendance.status,
       notes: attendance.notes,
     })

@@ -97,6 +97,7 @@ export const attendance = sqliteTable("attendance", {
     .references(() => students.id, { onDelete: "cascade" })
     .notNull(),
   date: text("date").notNull(),
+  time: text("time").notNull().default("00:00"), // Add default value
   status: text("status").notNull(),
   notes: text("notes"),
 });

@@ -35,7 +35,7 @@ const chartConfig = {
   },
   expenses: {
     label: "Expenses: ₹",
-    color: "hsl(var(--chart-5))",
+    color: "hsl(var(--chart-5))", 
   },
 } satisfies ChartConfig;
 
@@ -93,23 +93,23 @@ export function PaymentsChart({ chartData }: { chartData: ChartDataProps[] }) {
             <Area
               dataKey="payments"
               type="natural"
-              fill="var(--color-payments)"
+              fill="var(--chart-2)"
               fillOpacity={0.4}
-              stroke="var(--color-payments)"
+              stroke="var(--chart-2)"
             />
             <Area
               dataKey="expenses"
               type="natural"
-              fill="var(--color-expenses)"
+              fill="var(--chart-1)"
               fillOpacity={0.4}
-              stroke="var(--color-expenses)"
+              stroke="var(--chart-1)" 
             />
           </AreaChart>
         </ChartContainer>
       </CardContent>
       <CardFooter>
         <div className="flex w-full justify-between items-center gap-2 text-sm">
-          <div className="flex items-center gap-2 leading-none text-blue-600">
+          <div className="flex items-center gap-2 leading-none text-chart-3">
             Total Payments: ₹{totalPayments.toLocaleString()}
           </div>
           <div className="flex items-center gap-2 leading-none text-destructive">

@@ -32,6 +32,7 @@ export interface DemoFormState extends FormActionState {
 
 export interface AttendanceFormState extends FormActionState {
   studentId: number;
+  time?: string | null;
 }
 
 export interface AddStudentFormState extends FormActionState {

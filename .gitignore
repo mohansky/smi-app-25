@@ -47,3 +47,6 @@ next-env.d.ts
 
 # Drizzle migration files (optional - you might want to commit these)
 drizzle/
+
+# Readme for local development notes
+README.md
