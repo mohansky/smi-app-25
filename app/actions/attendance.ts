@@ -187,7 +187,9 @@ export async function deleteAttendanceRecord(id: number): Promise<ActionState> {
 
     await db.delete(attendance).where(eq(attendance.id, id));
 
-    revalidatePath("/attendance");
+    revalidatePath("/dashboard/admin/attendance"); 
+    revalidatePath("/dashboard/admin");
+    revalidatePath("/dashboard");
 
     return {
       status: "success",
