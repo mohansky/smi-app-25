@@ -43,10 +43,19 @@ import {
 } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { Input } from "../ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FilterConfig {
   column: string;
   placeholder: string;
+  type?: "text" | "select";
+  options?: Array<{ label: string; value: string }>;
 }
 
 // Add this new type helper
@@ -270,20 +279,44 @@ export function CustomDataTable<TData, TValue>({
         <div className="flex flex-wrap items-center gap-4 my-2">
           {filters.map((filter) => (
             <div key={filter.column} className="flex flex-col gap-1">
-              <Input
-                placeholder={filter.placeholder}
-                value={
-                  (table
-                    .getColumn(filter.column)
-                    ?.getFilterValue() as string) ?? ""
-                }
-                onChange={(event) =>
-                  table
-                    .getColumn(filter.column)
-                    ?.setFilterValue(event.target.value)
-                }
-                className="max-w-xs"
-              />
+              {filter.type === "select" && filter.options ? (
+                <Select
+                  value={
+                    (table
+                      .getColumn(filter.column)
+                      ?.getFilterValue() as string) ?? "all"
+                  }
+                  onValueChange={(value) =>
+                    table.getColumn(filter.column)?.setFilterValue(value === "all" ? "" : value)
+                  }
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder={filter.placeholder} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filter.options.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  placeholder={filter.placeholder}
+                  value={
+                    (table
+                      .getColumn(filter.column)
+                      ?.getFilterValue() as string) ?? ""
+                  }
+                  onChange={(event) =>
+                    table
+                      .getColumn(filter.column)
+                      ?.setFilterValue(event.target.value)
+                  }
+                  className="max-w-xs"
+                />
+              )}
               {filterCounts[filter.column] !== undefined && (
                 <div className="text-sm text-muted-foreground pl-2">
                   {filterCounts[filter.column]} matches

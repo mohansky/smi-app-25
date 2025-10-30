@@ -18,6 +18,8 @@ import {
   DialogTrigger,
 } from "../ui/dialog";
 import StudentDetails from "../custom-ui/stutent-details";
+import { EyeIcon } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 export const studentsColumns: ColumnDef<StudentFormValues>[] = [
   {
@@ -62,9 +64,7 @@ export const studentsColumns: ColumnDef<StudentFormValues>[] = [
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
             <DialogHeader className="sticky top-0 bg-background z-10">
-              <DialogTitle className="sr-only">
-                Student Details
-              </DialogTitle>
+              <DialogTitle className="sr-only">Student Details</DialogTitle>
             </DialogHeader>
             <Card className="shadow-none">
               {/* <CardHeader>
@@ -118,14 +118,32 @@ export const studentsColumns: ColumnDef<StudentFormValues>[] = [
   },
   {
     accessorKey: "dateOfBirth",
-    header: "Date of Birth",
+    header: () => {
+      return (
+        <Tooltip>
+          <TooltipTrigger>DOB</TooltipTrigger>
+          <TooltipContent>
+            <p>Date of Birth</p>
+          </TooltipContent>
+        </Tooltip>
+      );
+    },
     cell: ({ row }) => (
       <DateFormatter dateString={row.getValue("dateOfBirth")} />
     ),
   },
   {
     accessorKey: "joiningDate",
-    header: "Joining Date",
+    header: () => {
+      return (
+        <Tooltip>
+          <TooltipTrigger>DOJ</TooltipTrigger>
+          <TooltipContent>
+            <p>Date of Joining</p>
+          </TooltipContent>
+        </Tooltip>
+      );
+    },
     cell: ({ row }) => (
       <DateFormatter dateString={row.getValue("joiningDate")} />
     ),
@@ -141,18 +159,27 @@ export const studentsColumns: ColumnDef<StudentFormValues>[] = [
         {row.getValue("isActive") ? "Active" : "Inactive"}
       </Badge>
     ),
+    filterFn: (row, id, filterValue) => {
+      if (!filterValue || filterValue === "all") return true;
+      const rowValue = row.getValue(id);
+      return String(rowValue) === filterValue;
+    },
   },
   {
     accessorKey: "viewStudent",
-    header: "View Student",
+    header: "View",
     cell: ({ row }) => (
       <Link
         className="capitalize"
         href={`/dashboard/admin/students/${row.getValue("id")}`}
       >
-        <Button size="sm">
-          {/* <EyeIcon className="mr-1 h-4 w-4" /> */}
-          View
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-chart-2 hover:text-muted-foreground"
+        >
+          <EyeIcon className="mr-1 h-4 w-4" />
+          <span className="sr-only">View</span>
         </Button>
       </Link>
     ),
