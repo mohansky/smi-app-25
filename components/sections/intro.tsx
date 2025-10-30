@@ -7,9 +7,9 @@ export default function Intro() {
     <>
       <Container width="marginxy">
         <Heading
-          size="sm"
-          fontweight="medium"
-          className="text-center text-balance"
+          size="lg"
+          fontweight="normal"
+          className="text-balance leading-20"
         >
           {options.intro}
         </Heading>
