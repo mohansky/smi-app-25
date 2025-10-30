@@ -38,7 +38,19 @@ export default async function StudentsPage() {
           tableTitle="Students"
           pgSize={10}
           showDatePicker={false}
-          filters={[{ column: "name", placeholder: "Find by Name" }]}
+          filters={[
+            { column: "name", placeholder: "Find by Name" },
+            {
+              column: "isActive",
+              placeholder: "Filter by Status",
+              type: "select",
+              options: [
+                { label: "All", value: "all" },
+                { label: "Active", value: "true" },
+                { label: "Inactive", value: "false" }
+              ]
+            }
+          ]}
         />
       </div>
     </Suspense>
