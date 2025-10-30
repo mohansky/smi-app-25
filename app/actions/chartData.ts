@@ -405,12 +405,178 @@ export async function getAttendancePercentage(date: string) {
     ]);
 
     const present = presentCount[0]?.count || 0;
-    
+
     if (totalActive === 0) return 0;
-    
+
     return Math.round((present / totalActive) * 100);
   } catch (error) {
     console.error('Failed to calculate attendance percentage:', error);
     return 0;
+  }
+}
+
+// Get student attendance by student ID with optional month filter
+export async function getStudentAttendance(studentId: number, month?: string) {
+  try {
+    let startDate: Date;
+    let endDate: Date;
+
+    if (month) {
+      const monthDate = new Date(month);
+      startDate = startOfMonth(monthDate);
+      endDate = endOfMonth(monthDate);
+    } else {
+      // Get all time data if no month specified
+      startDate = new Date('2020-01-01');
+      endDate = new Date();
+    }
+
+    const startDateStr = format(startDate, 'yyyy-MM-dd');
+    const endDateStr = format(endDate, 'yyyy-MM-dd');
+
+    // Get student details
+    const student = await db
+      .select({
+        id: students.id,
+        name: students.name,
+        email: students.email,
+        instrument: students.instrument,
+        grade: students.grade,
+        batch: students.batch,
+      })
+      .from(students)
+      .where(eq(students.id, studentId))
+      .limit(1);
+
+    if (student.length === 0) {
+      return null;
+    }
+
+    // Get attendance records
+    const attendanceRecords = await db
+      .select({
+        id: attendance.id,
+        date: attendance.date,
+        time: attendance.time,
+        status: attendance.status,
+        notes: attendance.notes,
+      })
+      .from(attendance)
+      .where(
+        and(
+          eq(attendance.studentId, studentId),
+          gte(attendance.date, startDateStr),
+          lte(attendance.date, endDateStr)
+        )
+      )
+      .orderBy(attendance.date);
+
+    // Calculate statistics
+    const totalRecords = attendanceRecords.length;
+    const presentCount = attendanceRecords.filter(r => r.status === 'present').length;
+    const absentCount = attendanceRecords.filter(r => r.status === 'absent').length;
+    const attendancePercentage = totalRecords > 0
+      ? Math.round((presentCount / totalRecords) * 100)
+      : 0;
+
+    return {
+      student: student[0],
+      attendance: attendanceRecords,
+      stats: {
+        total: totalRecords,
+        present: presentCount,
+        absent: absentCount,
+        percentage: attendancePercentage,
+      },
+    };
+  } catch (error) {
+    console.error('Failed to fetch student attendance:', error);
+    return null;
+  }
+}
+
+// Search students by name or email
+export async function searchStudents(query: string) {
+  try {
+    if (!query || query.trim().length === 0) {
+      return [];
+    }
+
+    const searchQuery = `%${query.toLowerCase()}%`;
+
+    const results = await db
+      .select({
+        id: students.id,
+        name: students.name,
+        email: students.email,
+        instrument: students.instrument,
+        grade: students.grade,
+        batch: students.batch,
+      })
+      .from(students)
+      .where(
+        sql`LOWER(${students.name}) LIKE ${searchQuery} OR LOWER(${students.email}) LIKE ${searchQuery}`
+      )
+      .limit(10);
+
+    return results;
+  } catch (error) {
+    console.error('Failed to search students:', error);
+    return [];
+  }
+}
+
+// Get all active students
+export async function getAllActiveStudents() {
+  try {
+    const activeStudents = await db
+      .select({
+        id: students.id,
+        name: students.name,
+        email: students.email,
+        instrument: students.instrument,
+        grade: students.grade,
+        batch: students.batch,
+      })
+      .from(students)
+      .where(eq(students.isActive, true))
+      .orderBy(students.name);
+
+    return activeStudents;
+  } catch (error) {
+    console.error('Failed to fetch active students:', error);
+    return [];
+  }
+}
+
+// Get student stats with instrument breakdown
+export async function getStudentStats() {
+  try {
+    const activeStudents = await db
+      .select({
+        id: students.id,
+        instrument: students.instrument,
+      })
+      .from(students)
+      .where(eq(students.isActive, true));
+
+    const instrumentBreakdown = Object.values(INSTRUMENTS).map((instrument) => ({
+      instrument,
+      count: activeStudents.filter((s) => s.instrument === instrument).length,
+    }));
+
+    return {
+      totalActive: activeStudents.length,
+      instrumentBreakdown,
+    };
+  } catch (error) {
+    console.error('Failed to fetch student stats:', error);
+    return {
+      totalActive: 0,
+      instrumentBreakdown: Object.values(INSTRUMENTS).map((instrument) => ({
+        instrument,
+        count: 0,
+      })),
+    };
   }
 }
