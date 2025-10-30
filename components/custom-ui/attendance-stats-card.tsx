@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calendar } from "lucide-react";
-import { getAttendanceStats, getActiveStudentsCount } from "@/app/actions/chartData";
+import { getAttendanceStats } from "@/app/actions/chartData";
 import { format, subMonths } from "date-fns";
 
 interface AttendanceStats {

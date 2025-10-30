@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,7 +53,7 @@ export function StudentClassCount() {
     loadStudents();
   }, []);
 
-  const handleFetchAttendance = async () => {
+  const handleFetchAttendance = useCallback(async () => {
     if (!selectedStudentId) return;
 
     setIsLoading(true);
@@ -76,14 +76,14 @@ export function StudentClassCount() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedStudentId, selectedMonth]);
 
   // Auto-fetch when student or month changes
   useEffect(() => {
     if (selectedStudentId) {
       handleFetchAttendance();
     }
-  }, [selectedStudentId, selectedMonth]);
+  }, [selectedStudentId, selectedMonth, handleFetchAttendance]);
 
   const handleClearFilter = () => {
     setSelectedMonth("all-time");

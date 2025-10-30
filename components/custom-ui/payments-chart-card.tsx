@@ -12,12 +12,17 @@ import {
 import { Calendar } from "lucide-react";
 import { PaymentsChart } from "@/components/custom-ui/chart";
 import { getMonthlyPaymentsAndExpenses } from "@/app/actions/chartData";
-import { format, subMonths } from "date-fns";
+// import { format } from "date-fns";
+
+interface MonthlyData {
+  month: string;
+  payments: number;
+  expenses: number;
+}
 
 export function PaymentsChartCard() {
-  const currentMonth = format(new Date(), "yyyy-MM");
   const [selectedRange, setSelectedRange] = useState<string>("12");
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<MonthlyData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

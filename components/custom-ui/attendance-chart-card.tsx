@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Calendar } from "lucide-react";
 import { AttendanceChart } from "@/components/custom-ui/attendance-chart";
-import { getDailyAttendance, getActiveStudentsCount } from "@/app/actions/chartData";
+import { getDailyAttendance  } from "@/app/actions/chartData";
 import { format, subMonths } from "date-fns";
 
 interface AttendanceData {
