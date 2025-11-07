@@ -18,14 +18,24 @@ import {
 import { format, subMonths } from "date-fns";
 import { Label } from "../ui/label";
 import { Badge } from "../ui/badge";
+import {
+  getBatch,
+  getBatchVariant,
+  getGrade,
+  getGradeVariant,
+  getInstrumentIcon,
+} from "@/lib/color-icon-constants";
+import { Batch, Grade, Instrument } from "@/db/schema";
+// import { Student } from "@/db/schema";
+// import { StudentFormValues } from "@/lib/validations/student";
 
 interface Student {
   id: number;
   name: string;
   email: string;
-  instrument: string | null;
-  grade: string;
-  batch: string;
+  instrument: Instrument | null | undefined;
+  grade: Grade;
+  batch: Batch;
 }
 
 export function StudentClassCount() {
@@ -110,7 +120,7 @@ export function StudentClassCount() {
       </CardHeader>
       <CardContent className="p-5 space-y-4">
         {/* Student Selection */}
-        <div className="flex gap-5">
+        <div className="flex flex-col max-w-min gap-5">
           <div className="space-y-2">
             <label className="text-sm font-medium">Select Student</label>
             {loadingStudents ? (
@@ -208,7 +218,18 @@ export function StudentClassCount() {
             <div className="p-4 bg-muted rounded-lg  w-fit">
               <CardTitle className="mb-3">{studentInfo.name}</CardTitle>
               <div className="flex gap-4">
-                <Badge variant="destructive" className="capitalize">
+                <div className="flex items-center space-x-2 mt-1">
+                  {getInstrumentIcon(studentInfo.instrument as Instrument)}
+                  <span className="capitalize">{studentInfo.instrument}</span>
+                </div>
+                <Badge variant={getBatchVariant(studentInfo.batch)}>
+                  {`${getBatch(studentInfo.batch)}`}
+                </Badge>
+                <Badge variant={getGradeVariant(studentInfo.grade)}>
+                  {`${getGrade(studentInfo.grade)}`}
+                </Badge>
+
+                {/* <Badge variant="destructive" className="capitalize">
                   {studentInfo.instrument}
                 </Badge>
                 <Badge variant="destructive" className="capitalize">
@@ -216,7 +237,7 @@ export function StudentClassCount() {
                 </Badge>
                 <Badge variant="destructive" className="uppercase">
                   {studentInfo.batch}
-                </Badge>
+                </Badge> */}
               </div>
             </div>
 
