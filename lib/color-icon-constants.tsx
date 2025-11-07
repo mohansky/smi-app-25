@@ -30,13 +30,13 @@ export const getBatchColor = (batch: Batch) => {
 export const getBatchVariant = (batch: Batch) => {
   switch (batch as Batch) {
     case "mt":
-      return "secondary";
+      return "green";
     case "tf":
-      return "success";
+      return "blue";
     case "ws":
-      return "accent";
+      return "yellow";
     case "cc":
-      return "destructive";
+      return "orange";
     default:
       return "default";
   }
@@ -98,11 +98,11 @@ export const getGradeColor = (grade: Grade) => {
 export const getGradeVariant = (grade: Grade) => {
   switch (grade as Grade) {
     case "grade1":
-      return "secondary";
+      return "green";
     case "grade2":
-      return "success";
+      return "blue"; 
     case "grade3":
-      return "destructive";
+      return "yellow";
     default:
       return "default";
   }
